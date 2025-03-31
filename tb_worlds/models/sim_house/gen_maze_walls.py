@@ -12,6 +12,10 @@ texture_files = [
     "noise.png",
     "bricks.png",
 ]
+# Initialize variables
+sdf_ready = False
+error_message = "Unknown error"
+
 # Check if the file exists and parse it
 try:
     tree = ET.parse(local_model_path)
@@ -42,7 +46,8 @@ try:
         #diffuse.text = f"file://media/materials/textures/{texture_name}"
         #diffuse.text = f"__model__/materials/textures/{texture_name}"
         #diffuse.text = f"materials/textures/{texture_name}"
-        diffuse.text = f"file://materials/textures/{texture_name}"
+        #diffuse.text = f"file://materials/textures/{texture_name}"
+        diffuse.text = f"model://sim_house/materials/textures/{texture_name}"
 
         texture_index += 1
 
