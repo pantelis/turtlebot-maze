@@ -39,7 +39,11 @@ try:
         if diffuse is None:
             diffuse = ET.SubElement(material, "diffuse")
         texture_name = texture_files[texture_index % len(texture_files)]
-        diffuse.text = f"file://media/materials/textures/{texture_name}"
+        #diffuse.text = f"file://media/materials/textures/{texture_name}"
+        #diffuse.text = f"__model__/materials/textures/{texture_name}"
+        #diffuse.text = f"materials/textures/{texture_name}"
+        diffuse.text = f"file://materials/textures/{texture_name}"
+
         texture_index += 1
 
     # Save the new SDF with textures
