@@ -60,7 +60,7 @@ services:
       target: dev
       args:
         - UID=${UID:-1000}
-        - GID=${UID:-1000}
+        - GID=${GID:-1000}
         - USERNAME=${USERNAME:-devuser}
     volumes:
       # Mount the source code
@@ -73,7 +73,13 @@ services:
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
-  # Demo simulation world
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+
+  #Demo simulation world
   demo-world:
     extends: overlay
     command: ros2 launch tb_worlds tb_demo_world.launch.py
