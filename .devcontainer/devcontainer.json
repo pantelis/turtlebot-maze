@@ -1,0 +1,81 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
+{
+	"name": "ROS2 TurtleBot Development",
+
+	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
+	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
+	"dockerComposeFile": [
+		"../docker-compose.yaml",
+		"docker-compose.yml"
+	],
+
+	// The 'service' property is the name of the service for the container that VS Code should
+	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
+	"service": "dev",
+
+	// The optional 'workspaceFolder' property is the path VS Code should open by default when
+	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
+	"workspaceFolder": "/overlay_ws",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/nvidia-cuda:1": {}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Uncomment the next line if you want start specific services in your Docker Compose config.
+	// "runServices": [],
+
+	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
+	"shutdownAction": "stopCompose",
+
+	// Uncomment the next line to run commands after the container is created.
+	// "postCreateCommand": "source /opt/ros/${ROS_DISTRO}/setup.bash && source /turtlebot_ws/install/setup.bash",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack",
+				"ms-vscode.cpptools-themes",
+				"twxs.cmake",
+				"ms-python.python",
+				"ms-iot.vscode-ros",
+				"ms-azuretools.vscode-docker",
+				"ms-python.mypy-type-checker",
+				"RooVeterinaryInc.roo-cline"
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"terminal.integrated.profiles.linux": {
+					"bash": {
+						"path": "/bin/bash"
+					}
+				},
+				"C_Cpp.default.includePath": [
+					"/opt/ros/${ROS_DISTRO}/include",
+					"/turtlebot_ws/install/include",
+					"/overlay_ws/install/include",
+					"/overlay_ws/src/**"
+				],
+				"python.autoComplete.extraPaths": [
+					"/opt/ros/${ROS_DISTRO}/lib/python3.10/site-packages",
+					"/turtlebot_ws/install/lib/python3.10/site-packages",
+					"/overlay_ws/install/lib/python3.10/site-packages"
+				],
+				"python.analysis.extraPaths": [
+					"/opt/ros/${ROS_DISTRO}/lib/python3.10/site-packages",
+					"/turtlebot_ws/install/lib/python3.10/site-packages",
+					"/overlay_ws/install/lib/python3.10/site-packages"
+				]
+			}
+		}
+	},
+
+	// Connect as the non-root user created in the Dockerfile
+	//"remoteUser": "devuser"
+}
