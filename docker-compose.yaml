@@ -70,6 +70,7 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
+      # - /home/oscar/docker_ws_mine:/home/oscar/shared_folder:rw
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
