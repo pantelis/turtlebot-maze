@@ -42,3 +42,7 @@ cd ~/ros2_ws
 rosdep install -y -i --from-paths ~/ros2_ws/src --skip-keys=stella_vslam
 
 colcon build --symlink-install
+
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/lib/stella_vslam/build/3rd/FBoW/" >> ~/.bashrc
+echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
+source ~/.bashrc
