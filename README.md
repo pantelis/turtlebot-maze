@@ -1,4 +1,11 @@
+
+> [!NOTE]
+> This repository was cloned from [the original](https://github.com/sea-bass/turtlebot3_behavior_demos.git) and modified to allow additional libraries such as rvc3python package (your Peter Corke's textbook) tools such as  [Foxglove](https://docs.foxglove.dev/docs/connecting-to-data/ros-foxglove-bridge). 
+> For development, you can launch the environment using VS Code remote container feature and modify it using the typical `.devcontainer` folder contents.   
+> Note that the default ROS distribution is Jazzy and you need to switch to the corresponding branch for for some reason you want to use Humble. > To test that things are working, the nav2 panel in Rviz2 should display `active` and after you set an initial pose of the TB3/4 you can elect a navigation goal and you should see the robot moving to the goal.   Use Github issues to report any problems you encounter.
+
 # TurtleBot Behavior Demos
+
 In this repository, we demonstrate autonomous behavior with a simulated [ROBOTIS TurtleBot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/#overview) or [Clearpath TurtleBot 4](https://clearpathrobotics.com/turtlebot-4/) using Ubuntu 24.04 and ROS 2 Jazzy.
 
 The autonomy in these examples are designed using **behavior trees**.
@@ -12,7 +19,7 @@ For older versions:
 * If you want to use ROS 1, check out the [`noetic`](https://github.com/sea-bass/turtlebot3_behavior_demos/tree/noetic) branch of this repository.
 * If you want to use ROS 2 Humble, check out the [`humble`](https://github.com/sea-bass/turtlebot3_behavior_demos/tree/noetic) branch of this repository.
 
-By Sebastian Castro, 2021-2024
+By Sebastian Castro, 2021-2025
 
 Other key contributors:
 * [Kemal Bektaş](https://github.com/bektaskemal) -- Upgrade to BehaviorTree.CPP v4.
@@ -179,3 +186,7 @@ If you are a student or involved in academic work, you can get a free license to
 Refer to [the Groot2 website](https://www.behaviortree.dev/groot/) for more information.
 
 ![Example demo screenshot](./media/demo_screenshot_cpp.png)
+
+## Notes
+
+https://discourse.openrobotics.org/t/status-of-colcon-building-standards-based-python-packages/40578

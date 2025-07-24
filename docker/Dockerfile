@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  curl git libcanberra-gtk-module libcanberra-gtk3-module fuse3 libfuse2 libqt5svg5-dev \
  python3-pip python3-opencv python3-tk python3-pyqt5.qtwebengine 
  
- # Foxglove Bridge 
- RUN apt-get update && apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-foxglove-bridge
+# Foxglove Bridge 
+RUN apt-get update && apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-foxglove-bridge
 
 # Install additional Python modules
 RUN pip3 install --break-system-packages matplotlib transforms3d pyrobosim rvc3python
@@ -39,7 +39,9 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && echo "Built packages:" \
  && source install/setup.bash \
  && ros2 pkg list
-    ENV TURTLEBOT_MODEL=3
+
+ENV TURTLEBOT_MODEL=3 
+#${TURTLEBOT_MODEL:-3}
 
 # Test specific package availability
 RUN source /turtlebot_ws/install/setup.bash \
