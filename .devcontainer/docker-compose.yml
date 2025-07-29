@@ -13,9 +13,9 @@ services:
 
     volumes:
       # Update this to wherever you want VS Code to mount the folder of your project
-      - ..:/overlay_ws/turtlebot-maze:cached
-      # Add workspace to the expected ROS workspace location
-      - ../:/workspace/src/turtlebot-maze:cached
+      # - ..:/overlay_ws/turtlebot-maze:cached
+      # # Add workspace to the expected ROS workspace location
+      # - ../:/workspace/src/turtlebot-maze:cached
       # Ensure proper user permissions
       - /etc/passwd:/etc/passwd:ro
       - /etc/group:/etc/group:ro

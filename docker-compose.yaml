@@ -29,7 +29,7 @@ services:
     network_mode: host
     ipc: host
     # Needed to display graphical applications
-    privileged: True
+    privileged: true
     environment:
       # Needed to define a TurtleBot3 model type
       - TURTLEBOT3_MODEL=${TURTLEBOT3_MODEL:-waffle_pi}
