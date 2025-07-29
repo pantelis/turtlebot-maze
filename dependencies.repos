@@ -6,8 +6,7 @@ repositories:
   turtlebot3:
     type: git
     url: https://github.com/ROBOTIS-GIT/turtlebot3.git
-    version: humble-devel
-
+    version: humble
   # py_trees and related packages for Python based behavior trees.
   py_trees:
     type: git
