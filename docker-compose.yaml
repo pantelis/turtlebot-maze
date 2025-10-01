@@ -17,7 +17,7 @@ services:
     image: turtlebot_behavior:base
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.gpu
       args:
         ROS_DISTRO: ${ROS_DISTRO:?}
       target: base
@@ -33,6 +33,8 @@ services:
       # Needed to define a TurtleBot model type (3 or 4)
       - TURTLEBOT_MODEL=${TURTLEBOT_MODEL:-3}
       # Allows graphical programs in the container.
+      # - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      - NVIDIA_VISIBLE_DEVICES=all
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - NVIDIA_DRIVER_CAPABILITIES=all
@@ -47,7 +49,7 @@ services:
     image: turtlebot_behavior:overlay
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.gpu
       target: overlay
 
   # Developer container
@@ -56,11 +58,11 @@ services:
     image: turtlebot_behavior:dev
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.gpu
       target: dev
       args:
         - UID=${UID:-1000}
-        - GID=${GID:-1000}
+        - GID=${UID:-1000}
         - USERNAME=${USERNAME:-devuser}
     volumes:
       # Mount the source code
@@ -73,13 +75,7 @@ services:
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
-    devices:
-      - /dev/dri:/dev/dri
-    group_add:
-      - video
-      - render
-
-  #Demo simulation world
+  # Demo simulation world
   demo-world:
     extends: overlay
     command: ros2 launch tb_worlds tb_demo_world.launch.py
@@ -101,3 +97,112 @@ services:
       tree_type:=${BT_TYPE:?}
       enable_vision:=${ENABLE_VISION:?}
       target_color:=${TARGET_COLOR:?}
+
+# # Docker Compose file for TurtleBot3 Behavior Examples
+# #
+# # Usage:
+# #
+# # To build the images:
+# #   docker compose build
+# #
+# # To start up a specific service by name:
+# #   docker compose up <service_name>
+# #
+# # To open an interactive shell to a running container:
+# #   docker exec -it <container_name> bash
+
+# services:
+#   # Base image containing dependencies.
+#   base:
+#     image: turtlebot3_behavior:base
+#     build:
+#       context: .
+#       dockerfile: docker/Dockerfile
+#       args:
+#         ROS_DISTRO: jazzy
+#       target: base
+#     # Interactive shell
+#     stdin_open: true
+#     tty: true
+#     # Networking and IPC for ROS 2
+#     network_mode: host
+#     ipc: host
+#     # Needed to display graphical applications
+#     privileged: true
+#     environment:
+#       # Needed to define a TurtleBot3 model type
+#       - TURTLEBOT3_MODEL=${TURTLEBOT3_MODEL:-waffle_pi}
+#       # Allows graphical programs in the container.
+#       - DISPLAY=${DISPLAY}
+#       - QT_X11_NO_MITSHM=1
+#       - NVIDIA_DRIVER_CAPABILITIES=all
+#       # Fix graphics driver warnings
+#       - LIBGL_ALWAYS_INDIRECT=1
+#       - MESA_GL_VERSION_OVERRIDE=3.3
+#       - GALLIUM_DRIVER=llvmpipe
+#     volumes:
+#       # Allows graphical programs in the container.
+#       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+#       - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority
+#       # GPU device access for better graphics performance
+#       - /dev/dri:/dev/dri
+
+#   # Overlay image containing the example source code.
+#   overlay:
+#     extends: base
+#     image: turtlebot3_behavior:overlay
+#     build:
+#       context: .
+#       dockerfile: docker/Dockerfile
+#       target: overlay
+
+#   # Developer container
+#   dev:
+#     extends: overlay
+#     image: turtlebot3_behavior:dev
+#     build:
+#       context: .
+#       dockerfile: docker/Dockerfile
+#       target: dev
+#       args:
+#         - UID=${UID:-1000}
+#         - GID=${UID:-1000}
+#         - USERNAME=${USERNAME:-devuser}
+#     volumes:
+#       # Mount the source code
+#       - ./tb3_autonomy:/overlay_ws/src/tb3_autonomy:rw
+#       - ./tb3_worlds:/overlay_ws/src/tb3_worlds:rw
+#       # Mount colcon build artifacts for faster rebuilds
+#       - ./.colcon/build/:/overlay_ws/build/:rw
+#       - ./.colcon/install/:/overlay_ws/install/:rw
+#       - ./.colcon/log/:/overlay_ws/log/:rw
+#     user: ${USERNAME:-devuser}
+#     command: sleep infinity
+
+#   # Runs basic TurtleBot3 simulation
+#   sim:
+#     extends: overlay
+#     command: ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+
+#   # Demo world
+#   demo-world:
+#     extends: overlay
+#     command: ros2 launch tb3_worlds tb3_demo_world.launch.py
+
+#   # Behavior demo using Python and py_trees
+#   demo-behavior-py:
+#     extends: overlay
+#     command: >
+#       ros2 launch tb3_autonomy tb3_demo_behavior_py.launch.py
+#       tree_type:=${BT_TYPE:?}
+#       enable_vision:=${ENABLE_VISION:?}
+#       target_color:=${TARGET_COLOR:?}
+
+#   # Behavior demo using C++ and BehaviorTree.CPP
+#   demo-behavior-cpp:
+#     extends: overlay
+#     command: >
+#       ros2 launch tb3_autonomy tb3_demo_behavior_cpp.launch.py
+#       tree_type:=${BT_TYPE:?}
+#       enable_vision:=${ENABLE_VISION:?}
+#       target_color:=${TARGET_COLOR:?}
