@@ -8,16 +8,12 @@ FROM ros:${ROS_DISTRO} AS base
 ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
+
 # Install basic apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
  curl git libcanberra-gtk-module libcanberra-gtk3-module fuse3 libfuse2 libqt5svg5-dev \
- python3-pip python3-opencv python3-tk python3-pyqt5.qtwebengine 
- 
-# Foxglove Bridge 
-RUN apt-get update && apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-foxglove-bridge
+ python3-pip python3-opencv python3-tk python3-pyqt5.qtwebengine
 
-# Install additional Python modules
-RUN pip3 install --break-system-packages matplotlib transforms3d pyrobosim rvc3python
 
 # Use Cyclone DDS as middleware
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,18 +31,9 @@ WORKDIR /turtlebot_ws
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && apt-get update -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
- && colcon build --symlink-install \
- && echo "Built packages:" \
- && source install/setup.bash \
- && ros2 pkg list
+ && colcon build --symlink-install
+ENV TURTLEBOT_MODEL=3
 
-ENV TURTLEBOT_MODEL=3 
-#${TURTLEBOT_MODEL:-3}
-
-# Test specific package availability
-RUN source /turtlebot_ws/install/setup.bash \
- && ros2 pkg list | grep foxglove && echo "Foxglove bridge installed!" \
- || (echo "ERROR: Foxglove bridge not installed" && exit 1)
 
 # Download Groot2 AppImage and place it in the home folder.
 WORKDIR /root/
@@ -55,26 +42,26 @@ RUN curl -o Groot2.AppImage https://s3.us-west-1.amazonaws.com/download.behavior
 
 # Remove display warnings
 RUN mkdir /tmp/runtime-root
-ENV XDG_RUNTIME_DIR "/tmp/runtime-root"
+ENV XDG_RUNTIME_DIR="/tmp/runtime-root"
 RUN chmod -R 0700 /tmp/runtime-root
-ENV NO_AT_BRIDGE 1
+ENV NO_AT_BRIDGE=1
 
 # Set up the entrypoint
 WORKDIR /turtlebot_ws
 COPY ./docker/entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]
 
-##########################################
-# Overlay Image for TurtleBot Simulation #
-##########################################
+###########################################
+# Overlay Image for TurtleBot3 Simulation #
+###########################################
 FROM base AS overlay
 
 # Create an overlay Colcon workspace
 RUN mkdir -p /overlay_ws/src
 WORKDIR /overlay_ws
-COPY ./tb_autonomy/ ./src/tb_autonomy/
-COPY ./tb_worlds/ ./src/tb_worlds/
-RUN source /turtlebot_ws/install/setup.bash \
+COPY ./tb3_autonomy/ ./src/tb3_autonomy/
+COPY ./tb3_worlds/ ./src/tb3_worlds/
+RUN source /turtlebot3_ws/install/setup.bash \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
  && colcon build --symlink-install
 
@@ -90,46 +77,44 @@ FROM overlay AS dev
 # Dev container arguments
 ARG USERNAME=devuser
 ARG UID=1000
-ARG GID=${UID}
+ARG GID=1000
 
 # Install extra tools for development
 RUN apt-get update && apt-get install -y --no-install-recommends \
- gdb gdbserver nano
+ gdb gdbserver nano sudo \
+ && rm -rf /var/lib/apt/lists/*
 
-# In Ubuntu 24.04, there is already a user named "ubuntu" with UID 1000.
-# Delete this in the (common) event that the user on the host also has this UID.
-RUN touch /var/mail/ubuntu \
-    && chown ubuntu /var/mail/ubuntu \
-    && userdel -r ubuntu
+# Create (or adapt) user/group in an idempotent way. Also fix UID/GID usage (they were reversed previously).
+RUN set -eux; \
+	if getent group "${GID}" > /dev/null; then \
+		existing_group=$(getent group "${GID}" | cut -d: -f1); \
+		if [ "${existing_group}" != "${USERNAME}" ]; then \
+			groupmod -n "${USERNAME}" "${existing_group}"; \
+		fi; \
+	else \
+		groupadd -g "${GID}" "${USERNAME}"; \
+	fi; \
+	if id -u "${UID}" > /dev/null 2>&1; then \
+		existing_user=$(getent passwd "${UID}" | cut -d: -f1); \
+		if [ "${existing_user}" != "${USERNAME}" ]; then \
+			usermod -l "${USERNAME}" "${existing_user}"; \
+			usermod -d "/home/${USERNAME}" -m "${USERNAME}"; \
+		fi; \
+	else \
+		useradd -u "${UID}" -g "${GID}" -m -s /bin/bash "${USERNAME}"; \
+	fi; \
+	echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}; \
+	chmod 0440 /etc/sudoers.d/${USERNAME}
 
-# Create new user and home directory
-RUN groupadd --gid $GID $USERNAME \
- && useradd --uid ${UID} --gid ${GID} --create-home ${USERNAME} \
- && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
- && chmod 0440 /etc/sudoers.d/${USERNAME} \
- && mkdir -p /home/${USERNAME} \
- && chown -R ${UID}:${GID} /home/${USERNAME}
-
-# BEFORE switching to non-root user:
-RUN mkdir -p /tmp/runtime-root && \
-    chown -R ${UID}:${GID} /tmp/runtime-root && \
-    chmod -R 0700 /tmp/runtime-root
-
-# Set the ownership of the overlay workspace to the new user
-RUN chown -R ${UID}:${GID} /overlay_ws/
+# Ensure ownership of workspace (may already be correct if user existed)
+RUN chown -R ${UID}:${GID} /overlay_ws/ || true
 
 # Move Groot2 to new user's home directory and ensure it can be run
-RUN groupadd fuse \
+RUN groupadd -f fuse \
  && usermod -aG fuse ${USERNAME}
-RUN mv /root/Groot2.AppImage /home/${USERNAME} \ 
+RUN mv /root/Groot2.AppImage /home/${USERNAME}/ \
  && chown ${UID}:${GID} /home/${USERNAME}/Groot2.AppImage
 
-# Add devuser to video group for GPU access
-RUN usermod -aG video ${USERNAME}
-# Create render group if it doesn't exist and add user to it
-RUN groupadd -f render && usermod -aG render ${USERNAME}
-
-# Set up the entrypoint, including it in the .bashrc for interactive shells
+# Set the user and source entrypoint in the user's .bashrc file
 USER ${USERNAME}
-ENV XDG_RUNTIME_DIR="/tmp/runtime-root"
 RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc
