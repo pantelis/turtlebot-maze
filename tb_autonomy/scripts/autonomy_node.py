@@ -39,6 +39,8 @@ class AutonomyBehavior(Node):
         self.declare_parameter("tree_type", value="queue")
         self.declare_parameter("enable_vision", value=True)
         self.declare_parameter("target_color", value="blue")
+        self.declare_parameter("detector_type", value="hsv")
+        self.declare_parameter("target_object", value="cup")
 
         # Parse locations YAML file and shuffle the location list.
         location_file = self.get_parameter("location_file").value
@@ -51,10 +53,17 @@ class AutonomyBehavior(Node):
         self.tree_type = self.get_parameter("tree_type").value
         self.enable_vision = self.get_parameter("enable_vision").value
         self.target_color = self.get_parameter("target_color").value
+        self.detector_type = self.get_parameter("detector_type").value
+        self.target_object = self.get_parameter("target_object").value
         self.create_behavior_tree(self.tree_type)
 
         self.tree.node.get_logger().info(f"Using location file: {location_file}")
-        self.tree.node.get_logger().info(f"Looking for color {self.target_color}...")
+        if self.detector_type == "yolo":
+            self.tree.node.get_logger().info(
+                f"YOLO mode: looking for object '{self.target_object}'..."
+            )
+        else:
+            self.tree.node.get_logger().info(f"HSV mode: looking for color {self.target_color}...")
 
     def create_behavior_tree(self, tree_type):
         if tree_type == "naive":
@@ -89,6 +98,8 @@ class AutonomyBehavior(Node):
                                     f"find_{self.target_color}_{loc}",
                                     self.target_color,
                                     tree.node,
+                                    detector_type=self.detector_type,
+                                    target_object=self.target_object,
                                 ),
                             ],
                             memory=True,
@@ -131,7 +142,13 @@ class AutonomyBehavior(Node):
         )
         if self.enable_vision:
             seq.add_child(
-                LookForObject(f"find_{self.target_color}", self.target_color, tree.node)
+                LookForObject(
+                    f"find_{self.target_color}",
+                    self.target_color,
+                    tree.node,
+                    detector_type=self.detector_type,
+                    target_object=self.target_object,
+                )
             )
         return tree
 

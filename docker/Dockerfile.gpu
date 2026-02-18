@@ -21,12 +21,23 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
       && rm -rf /var/lib/apt/lists/*
 
 # Install additional Python modules
-RUN pip3 install --break-system-packages matplotlib transforms3d
+RUN pip3 install --break-system-packages matplotlib transforms3d eclipse-zenoh
 
 # Use Cyclone DDS as middleware
 RUN apt-get update && apt-get install -y --no-install-recommends \
  ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+# Install zenoh-bridge-ros2dds for bridging DDS topics to Zenoh
+# See: https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+ && ARCH=$(dpkg --print-architecture) \
+ && ZENOH_VERSION="1.2.1" \
+ && wget -qO /tmp/zenoh-bridge.deb \
+    "https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds/releases/download/${ZENOH_VERSION}/zenoh-bridge-ros2dds_${ZENOH_VERSION}-1_${ARCH}.deb" \
+ && dpkg -i /tmp/zenoh-bridge.deb \
+ && rm /tmp/zenoh-bridge.deb \
+ && rm -rf /var/lib/apt/lists/*
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /turtlebot_ws/src
@@ -86,6 +97,7 @@ RUN source /turtlebot_ws/install/setup.bash \
     ros-${ROS_DISTRO}-behaviortree-cpp \
     ros-${ROS_DISTRO}-nav2-minimal-tb3-sim \
     ros-${ROS_DISTRO}-nav2-minimal-tb4-sim \
+    ros-${ROS_DISTRO}-rosbridge-server \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
  && apt-get install -y --no-install-recommends vulkan-tools mesa-vulkan-drivers \
  && echo "=== Final vulkan check ===" \
