@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ros-mcp-server": {
+      "command": "uvx",
+      "args": ["ros-mcp", "--transport=stdio"]
+    }
+  }
+}
