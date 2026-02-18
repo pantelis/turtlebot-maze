@@ -86,6 +86,7 @@ RUN source /turtlebot_ws/install/setup.bash \
     ros-${ROS_DISTRO}-behaviortree-cpp \
     ros-${ROS_DISTRO}-nav2-minimal-tb3-sim \
     ros-${ROS_DISTRO}-nav2-minimal-tb4-sim \
+    ros-${ROS_DISTRO}-rosbridge-server \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
  && apt-get install -y --no-install-recommends vulkan-tools mesa-vulkan-drivers \
  && echo "=== Final vulkan check ===" \

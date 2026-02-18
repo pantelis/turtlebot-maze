@@ -1,5 +1,4 @@
 {
-  "backend": "dolt",
-  "version": "0.52.0",
-  "created": "2026-02-17T00:00:00Z"
+  "database": "",
+  "backend": "dolt"
 }

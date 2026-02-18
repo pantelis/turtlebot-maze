@@ -98,6 +98,13 @@ services:
       enable_vision:=${ENABLE_VISION:?}
       target_color:=${TARGET_COLOR:?}
 
+  # Rosbridge WebSocket server for ros-mcp-server integration
+  rosbridge:
+    extends: overlay
+    command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+    ports:
+      - "9090:9090"
+
 # # Docker Compose file for TurtleBot3 Behavior Examples
 # #
 # # Usage:
