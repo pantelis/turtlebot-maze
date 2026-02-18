@@ -34,6 +34,16 @@ def generate_launch_description():
                 default_value=TextSubstitution(text="True"),
                 description="Enable vision behaviors. If false, do navigation only.",
             ),
+            DeclareLaunchArgument(
+                "detector_type",
+                default_value=TextSubstitution(text="hsv"),
+                description="Detector type: hsv (color threshold) or yolo (YOLOv8 via Zenoh)",
+            ),
+            DeclareLaunchArgument(
+                "target_object",
+                default_value=TextSubstitution(text="cup"),
+                description="COCO class name to search for (yolo mode only)",
+            ),
             # Main autonomy node
             Node(
                 package="tb_autonomy",
@@ -47,6 +57,8 @@ def generate_launch_description():
                         "target_color": LaunchConfiguration("target_color"),
                         "tree_type": LaunchConfiguration("tree_type"),
                         "enable_vision": LaunchConfiguration("enable_vision"),
+                        "detector_type": LaunchConfiguration("detector_type"),
+                        "target_object": LaunchConfiguration("target_object"),
                     }
                 ],
             ),
