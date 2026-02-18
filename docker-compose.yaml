@@ -88,6 +88,8 @@ services:
       tree_type:=${BT_TYPE:?}
       enable_vision:=${ENABLE_VISION:?}
       target_color:=${TARGET_COLOR:?}
+      detector_type:=${DETECTOR_TYPE:-hsv}
+      target_object:=${TARGET_OBJECT:-cup}
 
   # Behavior demo using C++ and BehaviorTree.CPP
   demo-behavior-cpp:
@@ -97,6 +99,51 @@ services:
       tree_type:=${BT_TYPE:?}
       enable_vision:=${ENABLE_VISION:?}
       target_color:=${TARGET_COLOR:?}
+      detector_type:=${DETECTOR_TYPE:-hsv}
+      target_object:=${TARGET_OBJECT:-cup}
+
+  # Rosbridge WebSocket server for ros-mcp-server integration
+  rosbridge:
+    extends: overlay
+    command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+    ports:
+      - "9090:9090"
+
+  # Zenoh router for cross-container pub/sub
+  zenoh-router:
+    image: eclipse/zenoh:latest
+    network_mode: host
+    ipc: host
+    command: ["--adminspace-permissions", "rw"]
+
+  # Zenoh DDS bridge (exposes ROS 2 DDS topics as Zenoh keys with rt/ prefix)
+  zenoh-bridge:
+    extends: overlay
+    network_mode: host
+    ipc: host
+    command: zenoh-bridge-ros2dds
+
+  # PyTorch YOLOv8 object detector (subscribes via Zenoh, no ROS 2 needed)
+  detector:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./detector:/app
+    working_dir: /app
+    command: python object_detector.py --confidence 0.5 --model yolov8n.pt
 
 # # Docker Compose file for TurtleBot3 Behavior Examples
 # #

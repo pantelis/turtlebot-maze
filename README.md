@@ -1,16 +1,115 @@
-# TurtleBot3 Behavior Demos
+# TurtleBot Behavior Demos
 
-In this repository, we demonstrate autonomous behavior with a simulated [ROBOTIS TurtleBot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/#overview) using Ubuntu 22.04 and ROS 2 Humble.
+Autonomous navigation demos for a simulated [ROBOTIS TurtleBot](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/#overview) using ROS 2 Jazzy and behavior trees.
 
-The autonomy in these examples are designed using **behavior trees**.
-For more information, refer to [this blog post](https://roboticseabass.com/2021/05/08/introduction-to-behavior-trees/) or the [Behavior Trees in Robotics and AI textbook](https://arxiv.org/abs/1709.00084).
+The robot navigates a house environment searching for objects using vision (HSV color thresholding or YOLOv8 deep learning) and [Nav2](https://docs.nav2.org/)-based path planning.
 
-This also serves as an example for Docker workflows in ROS based projects.
-For more information, refer to [this blog post](https://roboticseabass.com/2023/07/09/updated-guide-docker-and-ros2/).
+**Behavior trees** drive the autonomy — see [this introduction](https://roboticseabass.com/2021/05/08/introduction-to-behavior-trees/) or the [BT textbook](https://arxiv.org/abs/1709.00084).
+Docker workflows follow [this guide](https://roboticseabass.com/2023/07/09/updated-guide-docker-and-ros2/).
 
-If you want to use ROS 1, check out the old version of this example from the [`noetic`](https://github.com/sea-bass/turtlebot3_behavior_demos/tree/noetic) branch of this repository.
+Originally by Sebastian Castro, 2021-2024.
 
-By Sebastian Castro, 2021-2024
+---
+
+## Architecture
+
+### System Overview
+
+```mermaid
+graph LR
+    subgraph ROS 2 Container
+        GAZ[Gazebo Simulation] -->|sensor_msgs/Image| CAM[/camera/image_raw]
+        NAV[Nav2 Stack] -->|navigation| TB[TurtleBot]
+        BT[Behavior Tree] -->|goals| NAV
+        BT -->|vision query| VIS[LookForObject]
+    end
+
+    subgraph Zenoh Transport
+        ZB[zenoh-bridge-ros2dds]
+        ZR[Zenoh Router]
+    end
+
+    subgraph PyTorch Container
+        DET[YOLOv8 Detector]
+    end
+
+    CAM -->|DDS| ZB
+    ZB -->|rt/camera/image_raw| DET
+    DET -->|tb/detections JSON| ZB
+    ZB -->|Zenoh sub| VIS
+```
+
+### Docker Services
+
+| Service | Image / Dockerfile | Purpose |
+|---|---|---|
+| `base` | `Dockerfile.gpu` → `base` | ROS 2 Jazzy + Cyclone DDS + Gazebo dependencies |
+| `overlay` | `Dockerfile.gpu` → `overlay` | Adds `tb_autonomy` + `tb_worlds` packages, Nav2, BT libs |
+| `dev` | `Dockerfile.gpu` → `dev` | Development container with source mounts + Groot2 |
+| `demo-world` | extends `overlay` | Launches Gazebo house world |
+| `demo-behavior-py` | extends `overlay` | Python behavior tree demo (py_trees) |
+| `demo-behavior-cpp` | extends `overlay` | C++ behavior tree demo (BehaviorTree.CPP) |
+| `zenoh-router` | `eclipse/zenoh:latest` | Zenoh router for pub/sub discovery |
+| `zenoh-bridge` | extends `overlay` | `zenoh-bridge-ros2dds` — bridges DDS topics to Zenoh keys |
+| `detector` | `Dockerfile.torch.gpu` | PyTorch YOLOv8 object detector (zero ROS dependencies) |
+
+### Vision Pipeline
+
+Two detection modes, switchable via the `DETECTOR_TYPE` environment variable:
+
+```mermaid
+graph TD
+    subgraph HSV Mode — detector_type=hsv
+        IMG1[Camera Image] --> HSV[HSV Threshold + Blob Detection]
+        HSV --> MATCH1{Color Match?}
+        MATCH1 -->|yes| S1[BT SUCCESS]
+        MATCH1 -->|no| F1[BT FAILURE]
+    end
+
+    subgraph YOLO Mode — detector_type=yolo
+        IMG2[Camera Image] --> ZEN[Zenoh Bridge]
+        ZEN --> YOLO[YOLOv8 Inference]
+        YOLO --> JSON[JSON Detections]
+        JSON --> ZEN2[Zenoh → ROS]
+        ZEN2 --> MATCH2{Target Object?}
+        MATCH2 -->|yes| S2[BT SUCCESS]
+        MATCH2 -->|no| F2[BT FAILURE]
+    end
+```
+
+### Repository Layout
+
+```
+turtlebot-maze/
+├── tb_autonomy/              # ROS 2 autonomy package
+│   ├── python/tb_behaviors/  #   Python behavior library (vision, navigation)
+│   ├── scripts/              #   ROS nodes (autonomy_node, zenoh_detection_sub)
+│   ├── launch/               #   Launch files (py + cpp demos)
+│   ├── src/                  #   C++ behavior tree plugins
+│   └── include/              #   C++ headers
+├── tb_worlds/                # Gazebo worlds, maps, Nav2 config
+├── detector/                 # Standalone PyTorch detector (no ROS)
+│   ├── object_detector.py    #   Zenoh sub → YOLOv8 → Zenoh pub
+│   └── requirements.txt      #   ultralytics, eclipse-zenoh, pycdr2
+├── docker/                   # Dockerfiles + entrypoint
+│   ├── Dockerfile.gpu        #   Multi-stage ROS 2 build (base/overlay/dev)
+│   └── Dockerfile.torch.gpu  #   PyTorch container (CUDA + Ultralytics)
+├── bt_xml/                   # Behavior tree XML definitions
+├── docker-compose.yaml       # All service definitions
+└── .env                      # Default environment variables
+```
+
+### Key Parameters
+
+| Parameter | Default | Options | Description |
+|---|---|---|---|
+| `ROS_DISTRO` | `jazzy` | — | ROS 2 distribution |
+| `TURTLEBOT_MODEL` | `3` | `3`, `4` | TurtleBot model |
+| `BT_TYPE` | `queue` | `naive`, `queue` | Behavior tree variant |
+| `ENABLE_VISION` | `true` | `true`, `false` | Enable vision behaviors |
+| `TARGET_COLOR` | `blue` | `red`, `green`, `blue` | HSV detection target |
+| `DETECTOR_TYPE` | `hsv` | `hsv`, `yolo` | Vision pipeline mode |
+| `TARGET_OBJECT` | `cup` | Any COCO class | YOLO detection target |
 
 ---
 
@@ -116,26 +215,46 @@ docker compose exec -it dev bash
 
 ## Behavior Trees Demo
 
-In this example, the robot navigates around known locations with the goal of finding a block of a specified color (red, green, or blue).
-Object detection is done using simple thresholding in the [HSV color space](https://en.wikipedia.org/wiki/HSL_and_HSV) with calibrated values.
+The robot navigates known locations searching for objects. Two vision modes are available:
 
-To start the demo world, run the following command:
+- **HSV mode** (default): Color thresholding in the [HSV color space](https://en.wikipedia.org/wiki/HSL_and_HSV) — finds colored blocks (red, green, blue)
+- **YOLO mode**: YOLOv8 deep learning — detects any [COCO class](https://docs.ultralytics.com/datasets/detect/coco/) object (cup, bottle, chair, etc.)
 
-```
+### Starting the Simulation
+
+```bash
 docker compose up demo-world
+```
+
+### HSV Mode (Default)
+
+```bash
+# Python behavior tree
+docker compose up demo-behavior-py
+
+# With custom parameters
+TARGET_COLOR=green BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py
+```
+
+### YOLO Mode (Deep Learning)
+
+YOLO mode requires the Zenoh bridge and PyTorch detector services:
+
+```bash
+# Start Zenoh transport + detector
+docker compose up zenoh-router zenoh-bridge detector
+
+# In another terminal, start the behavior demo with YOLO mode
+DETECTOR_TYPE=yolo TARGET_OBJECT=cup docker compose up demo-behavior-py
 ```
 
 ### Behavior Trees in Python
 
-To start the Python based demo, which uses [`py_trees`](https://py-trees.readthedocs.io/en/devel/):
+Uses [`py_trees`](https://py-trees.readthedocs.io/en/devel/) for behavior tree execution.
 
-```
-docker compose up demo-behavior-py
-```
+Customize via environment variables or the `.env` file:
 
-You can also change the following environment variables to set arguments for the launch files, or by modifying the defaults in the `.env` file:
-
-```
+```bash
 TARGET_COLOR=green BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py
 ```
 
@@ -148,28 +267,73 @@ The labeled images will appear once the robot reaches a target location.
 
 ### Behavior Trees in C++
 
-If you want to use BehaviorTree.CPP and Groot2 for visualization, [download Groot2 from the website](https://www.behaviortree.dev/groot/).
-To be consistent with the repository, download the AppImage and save it to your `$HOME` folder.
+Uses [`BehaviorTree.CPP`](https://www.behaviortree.dev/) with [Groot2](https://www.behaviortree.dev/groot/) for visualization.
 
-To start the C++ demo, which uses [`BehaviorTree.CPP`](https://www.behaviortree.dev/):
-
-```
+```bash
 docker compose up demo-behavior-cpp
-```
 
-You can also change the following environment variables to set arguments for the launch files, or by modifying the defaults in the `.env` file:
-
-```
+# With custom parameters
 TARGET_COLOR=green BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-cpp
 ```
 
-This example uses the behavior tree viewer ([`Groot2`](https://github.com/BehaviorTree/Groot2)).
+YOLO mode works the same way — start the Zenoh + detector services, then:
 
-After starting the commands above (plus doing some waiting and window rearranging), you should see the following.
-The labeled images will appear once the robot reaches a target location.
+```bash
+DETECTOR_TYPE=yolo TARGET_OBJECT=cup docker compose up demo-behavior-cpp
+```
 
-NOTE: You will need the PRO version of Groot2 to view live behavior tree updates.
-If you are a student or involved in academic work, you can get a free license to try this out.
-Refer to [the Groot2 website](https://www.behaviortree.dev/groot/) for more information.
+> **Note:** Groot2 PRO is required for live behavior tree updates. Students can get a free license at [behaviortree.dev](https://www.behaviortree.dev/groot/).
 
 ![Example demo screenshot](./media/demo_screenshot_cpp.png)
+
+---
+
+## Zenoh + YOLOv8 Object Detection
+
+The YOLO pipeline uses [Eclipse Zenoh](https://zenoh.io/) to decouple the ROS 2 simulation from the PyTorch inference container. This follows the [zenoh-python-lidar-plot](https://github.com/eclipse-zenoh/zenoh-demos/tree/main/ROS2/zenoh-python-lidar-plot) pattern.
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant G as Gazebo Camera
+    participant B as zenoh-bridge-ros2dds
+    participant D as object_detector.py
+    participant S as zenoh_detection_sub
+    participant BT as Behavior Tree
+
+    G->>B: sensor_msgs/Image (DDS)
+    B->>D: rt/camera/image_raw (CDR via Zenoh)
+    D->>D: pycdr2 deserialize → YOLOv8 inference
+    D->>B: tb/detections (JSON via Zenoh)
+    B->>S: Subscribe tb/detections
+    S->>BT: Cached detections
+    BT->>BT: LookForObject checks for target_object
+```
+
+### Zenoh Key Expressions
+
+| Key | Direction | Format | Description |
+|---|---|---|---|
+| `rt/camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
+| `tb/detections` | Detector → ROS | JSON array | Detection results |
+
+### Detection JSON Format
+
+```json
+[
+  {"class": "cup", "confidence": 0.87, "bbox": [120, 80, 250, 310]},
+  {"class": "bottle", "confidence": 0.72, "bbox": [300, 100, 380, 350]}
+]
+```
+
+### Detector CLI Options
+
+```bash
+python object_detector.py \
+  --model yolov8n.pt \
+  --confidence 0.5 \
+  --max-fps 10 \
+  --image-key "rt/camera/image_raw" \
+  --detection-key "tb/detections"
+```
