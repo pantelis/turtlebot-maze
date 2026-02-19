@@ -1,21 +1,8 @@
-version: '3.9'
 services:
-  # Update this to the name of the service you want to work with in your docker-compose.yml file
-  demo-world:
-    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer 
-    # folder. Note that the path of the Dockerfile and context is relative to the *primary* 
-    # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
-    # array). The sample below assumes your primary file is in the root of your project.
-    #
-    # build:
-    #   context: .
-    #   dockerfile: .devcontainer/Dockerfile
-
+  dev:
     volumes:
-      # Update this to wherever you want VS Code to mount the folder of your project
-      # - ..:/overlay_ws/turtlebot-maze:cached
-      # # Add workspace to the expected ROS workspace location
-      # - ../:/workspace/src/turtlebot-maze:cached
+      # Mount the project source into the VS Code workspace folder
+      - .:/workspaces/turtlebot-maze:cached
       # Ensure proper user permissions
       - /etc/passwd:/etc/passwd:ro
       - /etc/group:/etc/group:ro
@@ -30,8 +17,7 @@ services:
     environment:
       - ROS_DOMAIN_ID=30
       - DISPLAY=${DISPLAY}
-      # - PYTHONPATH=/workspace/install/lib/python3.8/site-packages:${PYTHONPATH}
-    
+
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 

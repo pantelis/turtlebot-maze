@@ -1,4 +1,5 @@
 {
-  "database": "",
-  "backend": "dolt"
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_database": "beads_turtlebot-maze"
 }
