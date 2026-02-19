@@ -48,11 +48,10 @@
   gz_type_name: "gz.msgs.Twist"
   direction: ROS_TO_GZ
 
-# RealSense depth camera bridges
-# Gazebo type="depth" sensor publishes on: <topic>, <topic>/points
-# (the base topic name carries the RGB image)
+# RealSense RGBD camera bridges
+# Gazebo type="rgbd_camera" publishes: <topic>/image (RGB), <topic>/depth_image, <topic>/points
 - ros_topic_name: "/intel_realsense_r200_depth/image_raw"
-  gz_topic_name: "/intel_realsense_r200_depth"
+  gz_topic_name: "/intel_realsense_r200_depth/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
@@ -69,9 +68,9 @@
   gz_type_name: "gz.msgs.PointCloudPacked"
   direction: GZ_TO_ROS
 
-# Keep legacy topic for backward compatibility (Zenoh pipeline uses this)
+# Legacy topic for backward compatibility (Zenoh pipeline uses this)
 - ros_topic_name: "/camera/image_raw"
-  gz_topic_name: "/intel_realsense_r200_depth"
+  gz_topic_name: "/intel_realsense_r200_depth/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
