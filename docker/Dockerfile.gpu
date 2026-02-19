@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget unzip \
  && wget -qO /tmp/zenoh-bridge.zip \
     "https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds/releases/download/${ZENOH_VERSION}/zenoh-plugin-ros2dds-${ZENOH_VERSION}-${ZENOH_ARCH}-debian.zip" \
  && unzip -o /tmp/zenoh-bridge.zip -d /tmp/zenoh-bridge \
- && dpkg -i /tmp/zenoh-bridge/*.deb \
+ && dpkg -i /tmp/zenoh-bridge/zenoh-bridge-ros2dds_*.deb \
  && rm -rf /tmp/zenoh-bridge.zip /tmp/zenoh-bridge \
  && rm -rf /var/lib/apt/lists/*
 
