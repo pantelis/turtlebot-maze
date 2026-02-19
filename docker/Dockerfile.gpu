@@ -29,14 +29,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Install zenoh-bridge-ros2dds for bridging DDS topics to Zenoh
-# See: https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds
-RUN apt-get update && apt-get install -y --no-install-recommends wget \
- && ARCH=$(dpkg --print-architecture) \
- && ZENOH_VERSION="1.2.1" \
- && wget -qO /tmp/zenoh-bridge.deb \
-    "https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds/releases/download/${ZENOH_VERSION}/zenoh-bridge-ros2dds_${ZENOH_VERSION}-1_${ARCH}.deb" \
- && dpkg -i /tmp/zenoh-bridge.deb \
- && rm /tmp/zenoh-bridge.deb \
+# See: https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds
+RUN apt-get update && apt-get install -y --no-install-recommends wget unzip \
+ && ZENOH_VERSION="1.7.2" \
+ && case "$(dpkg --print-architecture)" in \
+      amd64) ZENOH_ARCH="x86_64-unknown-linux-gnu" ;; \
+      arm64) ZENOH_ARCH="aarch64-unknown-linux-gnu" ;; \
+      armhf) ZENOH_ARCH="armv7-unknown-linux-gnueabihf" ;; \
+      *) echo "Unsupported architecture" && exit 1 ;; \
+    esac \
+ && wget -qO /tmp/zenoh-bridge.zip \
+    "https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds/releases/download/${ZENOH_VERSION}/zenoh-plugin-ros2dds-${ZENOH_VERSION}-${ZENOH_ARCH}-debian.zip" \
+ && unzip -o /tmp/zenoh-bridge.zip -d /tmp/zenoh-bridge \
+ && dpkg -i /tmp/zenoh-bridge/*.deb \
+ && rm -rf /tmp/zenoh-bridge.zip /tmp/zenoh-bridge \
  && rm -rf /var/lib/apt/lists/*
 
 # Create Colcon workspace with external dependencies
