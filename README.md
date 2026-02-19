@@ -337,3 +337,38 @@ python object_detector.py \
   --image-key "rt/camera/image_raw" \
   --detection-key "tb/detections"
 ```
+
+---
+
+## ros-mcp-server Navigation Demo
+
+Control the TurtleBot from [Claude Code](https://claude.ai/claude-code) using natural language. The [ros-mcp-server](https://github.com/ros-mcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
+
+### Setup
+
+1. Start the simulation and rosbridge:
+
+```bash
+# Terminal 1: Launch Gazebo + Nav2
+docker compose up demo-world
+
+# Terminal 2: Start rosbridge WebSocket (port 9090)
+docker compose up rosbridge
+```
+
+2. Open the project in Claude Code.
+
+### Usage
+
+Type `/navigate` in Claude Code. The slash command will:
+
+1. Connect to the robot via rosbridge
+2. Verify Nav2 is ready
+3. Show the robot's current position
+4. Ask you to pick a destination (4 predefined locations in the house)
+5. Send a navigation goal (you'll be asked to approve this action)
+6. Monitor progress and confirm arrival
+
+### Safety
+
+The `send_action_goal` tool requires manual approval each time it is called. This is an intentional safety gate for robot-commanding operations.
