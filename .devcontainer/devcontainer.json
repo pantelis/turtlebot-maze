@@ -16,11 +16,16 @@
 
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// Note: git-lfs and python features removed — already provided by Dockerfile.gpu.
 	// "features": {},
+
+	// Container image has bash, not zsh
+	"settings": {
+		"terminal.integrated.defaultProfile.linux": "bash"
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
