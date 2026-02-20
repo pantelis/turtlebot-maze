@@ -83,6 +83,8 @@ services:
   # Enhanced demo world with taller textured walls and ArUco markers
   demo-world-enhanced:
     extends: overlay
+    environment:
+      - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
     command: >
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=sim_house_enhanced.sdf.xacro

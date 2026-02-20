@@ -149,6 +149,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -194,6 +196,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -239,6 +243,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -284,6 +290,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -329,6 +337,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -374,6 +384,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -419,6 +431,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -464,6 +478,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -509,6 +525,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -554,6 +572,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -599,6 +619,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -644,6 +666,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -689,6 +713,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -734,6 +760,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -779,6 +807,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -824,6 +854,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -869,6 +901,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -914,6 +948,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -959,6 +995,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -1004,6 +1042,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -1049,6 +1089,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -1094,6 +1136,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -1139,6 +1183,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -1184,6 +1230,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -1229,6 +1277,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -1274,6 +1324,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -1319,6 +1371,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
@@ -1364,6 +1418,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.7 0.3 0.2 1</ambient>
+            <diffuse>0.8 0.4 0.3 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/bricks.png</albedo_map>
@@ -1409,6 +1465,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.6 0.6 0.6 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/concrete.png</albedo_map>
@@ -1454,6 +1512,8 @@
             </box>
           </geometry>
           <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.25 1</diffuse>
             <pbr>
               <metal>
                 <albedo_map>$(arg texture_base)/wood_.png</albedo_map>
