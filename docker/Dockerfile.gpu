@@ -154,4 +154,5 @@ RUN mv /root/Groot2.AppImage /home/${USERNAME} \
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells
 USER ${USERNAME}
-RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc
+RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc \
+ && echo "source /entrypoint.sh" >> /home/${USERNAME}/.zshrc
