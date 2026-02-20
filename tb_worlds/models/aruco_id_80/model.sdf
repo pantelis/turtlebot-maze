@@ -24,7 +24,7 @@
             <visual name="visual">
                 <geometry>
                     <mesh>
-                        <uri>https://fuel.gazebosim.org/1.0/myoan/models/aruco cube id 80/2/files/meshes/aruco_cube_80.obj</uri>
+                        <uri>model://aruco_id_80/meshes/aruco_cube_80.obj</uri>
                         <scale>0.1 0.1 0.1</scale>
                     </mesh>
                 </geometry>
@@ -33,7 +33,7 @@
             <collision name="collision">
                 <geometry>
                     <mesh>
-                        <uri>https://fuel.gazebosim.org/1.0/myoan/models/aruco cube id 80/2/files/meshes/aruco_cube_80.obj</uri>
+                        <uri>model://aruco_id_80/meshes/aruco_cube_80.obj</uri>
                         <scale>0.1 0.1 0.1</scale>
                     </mesh>
                 </geometry>
