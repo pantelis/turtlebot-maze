@@ -155,4 +155,8 @@ RUN mv /root/Groot2.AppImage /home/${USERNAME} \
 # Set up the entrypoint, including it in the .bashrc for interactive shells
 USER ${USERNAME}
 RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc \
- && echo "source /entrypoint.sh" >> /home/${USERNAME}/.zshrc
+ && { echo '# Source ROS 2 workspaces (zsh-native setup files)'; \
+      echo '[ -f /opt/ros/${ROS_DISTRO}/setup.zsh ] && source /opt/ros/${ROS_DISTRO}/setup.zsh'; \
+      echo '[ -f /turtlebot_ws/install/setup.zsh ] && source /turtlebot_ws/install/setup.zsh'; \
+      echo '[ -f /overlay_ws/install/setup.zsh ] && source /overlay_ws/install/setup.zsh'; \
+    } >> /home/${USERNAME}/.zshrc
