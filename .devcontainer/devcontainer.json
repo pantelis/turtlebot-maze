@@ -22,10 +22,6 @@
 	// Note: git-lfs and python features removed — already provided by Dockerfile.gpu.
 	// "features": {},
 
-	// Container image has bash, not zsh
-	"settings": {
-		"terminal.integrated.defaultProfile.linux": "bash"
-	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
