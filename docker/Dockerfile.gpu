@@ -10,7 +10,7 @@ SHELL ["/bin/bash", "-c"]
 
 # Install basic apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
- curl git libcanberra-gtk-module libcanberra-gtk3-module fuse3 libfuse2 libqt5svg5-dev \
+ curl git zsh libcanberra-gtk-module libcanberra-gtk3-module fuse3 libfuse2 libqt5svg5-dev \
  python3-pip python3-opencv python3-tk python3-pyqt5.qtwebengine
 
 # Minimal GL/Vulkan user-space (no NVIDIA driver packages here)
@@ -154,4 +154,9 @@ RUN mv /root/Groot2.AppImage /home/${USERNAME} \
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells
 USER ${USERNAME}
-RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc
+RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc \
+ && { echo '# Source ROS 2 workspaces (zsh-native setup files)'; \
+      echo '[ -f /opt/ros/${ROS_DISTRO}/setup.zsh ] && source /opt/ros/${ROS_DISTRO}/setup.zsh'; \
+      echo '[ -f /turtlebot_ws/install/setup.zsh ] && source /turtlebot_ws/install/setup.zsh'; \
+      echo '[ -f /overlay_ws/install/setup.zsh ] && source /overlay_ws/install/setup.zsh'; \
+    } >> /home/${USERNAME}/.zshrc
