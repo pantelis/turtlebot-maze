@@ -3,9 +3,6 @@ services:
     volumes:
       # Mount the project source into the VS Code workspace folder
       - .:/workspaces/turtlebot-maze:cached
-      # Ensure proper user permissions
-      - /etc/passwd:/etc/passwd:ro
-      - /etc/group:/etc/group:ro
 
     # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
     # cap_add:
