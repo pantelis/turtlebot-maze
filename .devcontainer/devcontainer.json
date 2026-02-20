@@ -22,6 +22,11 @@
 	// Note: git-lfs and python features removed — already provided by Dockerfile.gpu.
 	// "features": {},
 
+	// Default to bash (ROS 2 standard); zsh is also available
+	"settings": {
+		"terminal.integrated.defaultProfile.linux": "bash"
+	},
+
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
