@@ -80,6 +80,14 @@ services:
     extends: overlay
     command: ros2 launch tb_worlds tb_demo_world.launch.py
 
+  # Enhanced demo world with taller textured walls and ArUco markers
+  demo-world-enhanced:
+    extends: overlay
+    command: >
+      ros2 launch tb_worlds tb_demo_world.launch.py
+      world_name:=sim_house_enhanced.sdf.xacro
+      use_aruco:=True
+
   # Behavior demo using Python and py_trees
   demo-behavior-py:
     extends: overlay

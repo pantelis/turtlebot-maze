@@ -1,0 +1,78 @@
+mtllib aruco_cube_60.mtl
+
+# Vertices for a 1x1x1 cube
+v 0.0 0.0 0.0     # Vertex 1 (Front Bottom Left)
+v 1.0 0.0 0.0     # Vertex 2 (Front Bottom Right)
+v 1.0 1.0 0.0     # Vertex 3 (Front Top Right)
+v 0.0 1.0 0.0     # Vertex 4 (Front Top Left)
+v 0.0 0.0 1.0     # Vertex 5 (Back Bottom Left)
+v 1.0 0.0 1.0     # Vertex 6 (Back Bottom Right)
+v 1.0 1.0 1.0     # Vertex 7 (Back Top Right)
+v 0.0 1.0 1.0     # Vertex 8 (Back Top Left)
+
+# Vertex Normals (for each face of the cube)
+vn 0.0 0.0 -1.0   # Front face
+vn 0.0 0.0 1.0    # Back face
+vn -1.0 0.0 0.0   # Left face
+vn 1.0 0.0 0.0    # Right face
+vn 0.0 1.0 0.0    # Top face (correct direction now)
+vn 0.0 -1.0 0.0   # Bottom face (correct direction now)
+
+# Texture Coordinates (same for each face)
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+
+g Cube
+usemtl aruco_cube_60
+
+# Faces for the outside (6 faces)
+# Front face (2 triangles)
+f 1/1/1 2/2/1 3/3/1
+f 1/1/1 3/3/1 4/4/1
+
+# Back face (2 triangles)
+f 5/1/2 6/2/2 7/3/2
+f 5/1/2 7/3/2 8/4/2
+
+# Left face (2 triangles)
+f 1/1/3 4/2/3 8/3/3
+f 1/1/3 8/3/3 5/4/3
+
+# Right face (2 triangles)
+f 2/1/4 6/2/4 7/3/4
+f 2/1/4 7/3/4 3/4/4
+
+# Bottom face (2 triangles, corrected winding order for outside)
+f 1/1/5 2/2/5 6/3/5
+f 1/1/5 6/3/5 5/4/5
+
+# Top face (2 triangles, corrected winding order for outside)
+f 4/1/6 3/2/6 7/3/6
+f 4/1/6 7/3/6 8/4/6
+
+# Faces for the inside (6 faces, reverse winding for inside faces)
+# Front face (2 triangles, reverse winding for inside faces)
+f 1/1/1 4/2/1 3/3/1
+f 1/1/1 3/3/1 2/4/1
+
+# Back face (2 triangles, reverse winding for inside faces)
+f 5/1/2 8/2/2 7/3/2
+f 5/1/2 7/3/2 6/4/2
+
+# Left face (2 triangles, reverse winding for inside faces)
+f 1/1/3 5/2/3 6/3/3
+f 1/1/3 6/3/3 2/4/3
+
+# Right face (2 triangles, reverse winding for inside faces)
+f 4/1/4 8/2/4 7/3/4
+f 4/1/4 7/3/4 3/4/4
+
+# Bottom face (2 triangles, reverse winding for inside faces)
+f 1/1/5 5/2/5 6/3/5
+f 1/1/5 6/3/5 2/4/5
+
+# Top face (2 triangles, reverse winding for inside faces)
+f 4/1/6 8/2/6 7/3/6
+f 4/1/6 7/3/6 3/4/6

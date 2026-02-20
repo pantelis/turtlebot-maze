@@ -13,7 +13,7 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
 from launch_ros.actions import Node
 
@@ -34,6 +34,8 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration("use_respawn")
     rviz_config_file = LaunchConfiguration("rviz_config_file")
     use_rviz = LaunchConfiguration("use_rviz")
+    world_name = LaunchConfiguration("world_name")
+    use_aruco = LaunchConfiguration("use_aruco")
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -93,6 +95,21 @@ def generate_launch_description():
         "robot_name", default_value="turtlebot", description="name of the robot"
     )
 
+    declare_world_name_cmd = DeclareLaunchArgument(
+        "world_name",
+        default_value="sim_house.sdf.xacro",
+        description="World filename relative to tb_worlds/worlds/",
+    )
+
+    declare_use_aruco_cmd = DeclareLaunchArgument(
+        "use_aruco",
+        default_value="False",
+        description="Whether to spawn ArUco markers",
+    )
+
+    # Construct full world path from world_name
+    world_path = PathJoinSubstitution([bringup_dir, "worlds", world_name])
+
     sim_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(bringup_dir, "launch", "tb_world.launch.py")
@@ -100,6 +117,7 @@ def generate_launch_description():
         launch_arguments={
             "namespace": namespace,
             "use_sim_time": use_sim_time,
+            "world": world_path,
         }.items(),
     )
 
@@ -108,6 +126,14 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(bringup_dir, "launch", "block_spawner.launch.py")
         ),
+    )
+
+    # ArUco Marker Spawner (conditional)
+    aruco_spawner_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, "launch", "aruco_marker_spawner.launch.py")
+        ),
+        condition=IfCondition(use_aruco),
     )
 
     rviz_cmd = IncludeLaunchDescription(
@@ -154,11 +180,14 @@ def generate_launch_description():
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_world_name_cmd)
+    ld.add_action(declare_use_aruco_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(sim_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(block_spawner_cmd)
+    ld.add_action(aruco_spawner_cmd)
 
     return ld
