@@ -63,7 +63,9 @@ class AutonomyBehavior(Node):
                 f"YOLO mode: looking for object '{self.target_object}'..."
             )
         else:
-            self.tree.node.get_logger().info(f"HSV mode: looking for color {self.target_color}...")
+            self.tree.node.get_logger().info(
+                f"HSV mode: looking for color {self.target_color}..."
+            )
 
     def create_behavior_tree(self, tree_type):
         if tree_type == "naive":
