@@ -31,6 +31,7 @@ def generate_launch_description():
     # Create the launch configuration variables
     namespace = LaunchConfiguration("namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    texture_base = LaunchConfiguration("texture_base")
 
     # Launch configuration variables specific to simulation
     world = LaunchConfiguration("world")
@@ -72,6 +73,12 @@ def generate_launch_description():
         "robot_sdf",
         default_value=os.path.join(bringup_dir, "urdf", "gz_waffle.sdf.xacro"),
         description="Full path to robot sdf file to spawn the robot in gazebo",
+    )
+
+    declare_texture_base_cmd = DeclareLaunchArgument(
+        "texture_base",
+        default_value=os.path.join(bringup_dir, "worlds", "textures"),
+        description="Absolute path to wall texture directory for enhanced worlds",
     )
 
     turtlebot_model_os_value = os.getenv("TURTLEBOT_MODEL", "3")
@@ -124,7 +131,15 @@ def generate_launch_description():
     # take SDF strings for worlds, so the output of xacro needs to be saved into
     # a temporary file and passed to Gazebo.
     world_sdf = tempfile.mktemp(prefix="tb_", suffix=".sdf")
-    world_sdf_xacro = ExecuteProcess(cmd=["xacro", "-o", world_sdf, world])
+    world_sdf_xacro = ExecuteProcess(
+        cmd=[
+            "xacro",
+            "-o",
+            world_sdf,
+            world,
+            ["texture_base:=", texture_base],
+        ]
+    )
     gazebo = ExecuteProcess(
         cmd=["gz", "sim", "-r", world_sdf],
         output="screen",
@@ -163,6 +178,7 @@ def generate_launch_description():
             declare_world_cmd,
             declare_robot_name_cmd,
             declare_robot_sdf_cmd,
+            declare_texture_base_cmd,
             world_sdf_xacro,
             remove_temp_sdf_file,
             gz_tb_spawner,

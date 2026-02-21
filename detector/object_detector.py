@@ -51,18 +51,42 @@ class Image(IdlStruct, typename="sensor_msgs/msg/Image"):
 
 def main():
     parser = argparse.ArgumentParser(description="Zenoh YOLOv8 Object Detector")
-    parser.add_argument("-e", "--connect", type=str, default="",
-                        help="Zenoh endpoint to connect to (empty = multicast)")
-    parser.add_argument("-m", "--model", type=str, default="yolov8n.pt",
-                        help="Ultralytics model name or path")
-    parser.add_argument("-c", "--confidence", type=float, default=0.5,
-                        help="Minimum detection confidence")
-    parser.add_argument("--image-key", type=str, default="rt/camera/image_raw",
-                        help="Zenoh key for camera images (bridged from ROS 2)")
-    parser.add_argument("--detection-key", type=str, default="tb/detections",
-                        help="Zenoh key to publish detections to")
-    parser.add_argument("--max-fps", type=float, default=10.0,
-                        help="Maximum inference rate in Hz")
+    parser.add_argument(
+        "-e",
+        "--connect",
+        type=str,
+        default="",
+        help="Zenoh endpoint to connect to (empty = multicast)",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        default="yolov8n.pt",
+        help="Ultralytics model name or path",
+    )
+    parser.add_argument(
+        "-c",
+        "--confidence",
+        type=float,
+        default=0.5,
+        help="Minimum detection confidence",
+    )
+    parser.add_argument(
+        "--image-key",
+        type=str,
+        default="rt/camera/image_raw",
+        help="Zenoh key for camera images (bridged from ROS 2)",
+    )
+    parser.add_argument(
+        "--detection-key",
+        type=str,
+        default="tb/detections",
+        help="Zenoh key to publish detections to",
+    )
+    parser.add_argument(
+        "--max-fps", type=float, default=10.0, help="Maximum inference rate in Hz"
+    )
     args = parser.parse_args()
 
     # Load model
@@ -122,11 +146,13 @@ def main():
         for result in results:
             for box in result.boxes:
                 cls_id = int(box.cls[0])
-                detections.append({
-                    "class": model.names[cls_id],
-                    "confidence": round(float(box.conf[0]), 3),
-                    "bbox": [round(float(x), 1) for x in box.xyxy[0].tolist()],
-                })
+                detections.append(
+                    {
+                        "class": model.names[cls_id],
+                        "confidence": round(float(box.conf[0]), 3),
+                        "bbox": [round(float(x), 1) for x in box.xyxy[0].tolist()],
+                    }
+                )
 
         # Publish JSON detections
         payload = json.dumps(detections)

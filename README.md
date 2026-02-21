@@ -174,7 +174,7 @@ cd turtlebot3_ws
 colcon build
 ```
 
-NOTE: For best results, we recommend that you change your ROS Middleware (RMW) implementation to Cyclone DDS by following [these instructions](https://docs.ros.org/en/humble/Installation/DDS-Implementations/Working-with-Eclipse-CycloneDDS.html).
+NOTE: For best results, we recommend that you change your ROS Middleware (RMW) implementation to Cyclone DDS by following [these instructions](https://docs.ros.org/en/jazzy/Installation/RMW-Implementations/DDS-Implementations/Working-with-Eclipse-CycloneDDS.html).
 
 ---
 
@@ -342,7 +342,7 @@ python object_detector.py \
 
 ## ros-mcp-server Navigation Demo
 
-Control the TurtleBot from [Claude Code](https://claude.ai/claude-code) using natural language. The [ros-mcp-server](https://github.com/ros-mcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
+Control the TurtleBot from [Claude Code](https://claude.com/product/claude-code) using natural language. The [ros-mcp-server](https://github.com/robotmcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
 
 ### Setup
 

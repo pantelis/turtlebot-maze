@@ -38,9 +38,7 @@ class ZenohDetectionSubscriber(Node):
         self._sub = self._session.declare_subscriber(
             detection_key, self._detection_callback
         )
-        self.get_logger().info(
-            f"Subscribed to Zenoh key: {detection_key}"
-        )
+        self.get_logger().info(f"Subscribed to Zenoh key: {detection_key}")
 
     def _detection_callback(self, sample):
         try:

@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://www\\.behaviortree\\.dev"
+    }
+  ],
+  "aliveStatusCodes": [200, 203, 403]
+}

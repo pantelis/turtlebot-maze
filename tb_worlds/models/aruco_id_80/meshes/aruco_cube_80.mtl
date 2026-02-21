@@ -1,0 +1,3 @@
+newmtl aruco_cube_80
+map_Kd ../materials/textures/80.jpg
+map_Ka ../materials/textures/80.jpg
