@@ -47,6 +47,7 @@ graph LR
 | `overlay` | `Dockerfile.gpu` → `overlay` | Adds `tb_autonomy` + `tb_worlds` packages, Nav2, BT libs |
 | `dev` | `Dockerfile.gpu` → `dev` | Development container with source mounts + Groot2 |
 | `demo-world` | extends `overlay` | Launches Gazebo house world |
+| `demo-world-enhanced` | extends `overlay` | Enhanced world with 3m textured walls and ArUco markers |
 | `demo-behavior-py` | extends `overlay` | Python behavior tree demo (py_trees) |
 | `demo-behavior-cpp` | extends `overlay` | C++ behavior tree demo (BehaviorTree.CPP) |
 | `zenoh-router` | `eclipse/zenoh:latest` | Zenoh router for pub/sub discovery |
@@ -285,6 +286,62 @@ DETECTOR_TYPE=yolo TARGET_OBJECT=cup docker compose up demo-behavior-cpp
 > **Note:** Groot2 PRO is required for live behavior tree updates. Students can get a free license at [behaviortree.dev](https://www.behaviortree.dev/groot/).
 
 ![Example demo screenshot](./media/demo_screenshot_cpp.png)
+
+---
+
+## Enhanced Maze World
+
+An optional world variant with taller textured walls and ArUco markers, designed for vision-based navigation and SLAM testing. The original `demo-world` remains unchanged.
+
+### What's Different
+
+| Feature | `demo-world` | `demo-world-enhanced` |
+|---------|-------------|----------------------|
+| Wall height | 1 m | 3 m |
+| Wall appearance | Default gray (`Gazebo/Wood`) | PBR textures with color fallbacks (brick red, concrete gray, wood brown) |
+| ArUco markers | None | Two markers (IDs 60 and 80) spawned at runtime |
+| Map / Nav2 config | `sim_house_map.yaml` | Same — wall footprint is unchanged |
+
+### Launch
+
+```bash
+# Build (only needed once)
+docker compose build demo-world-enhanced
+
+# Launch the enhanced world
+docker compose up demo-world-enhanced
+```
+
+> **Warning:** Do not run `demo-world` and `demo-world-enhanced` simultaneously. Both use `network_mode: host`, so two gz-sim instances will compete for the same ports.
+
+The enhanced world is fully compatible with all behavior demos — just start `demo-world-enhanced` instead of `demo-world`, then run `demo-behavior-py` or `demo-behavior-cpp` as usual.
+
+### Launch Parameters
+
+The enhanced world is controlled through launch arguments on `tb_demo_world.launch.py`:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `world_name` | `sim_house.sdf.xacro` | World filename relative to `tb_worlds/worlds/` |
+| `use_aruco` | `False` | Spawn ArUco markers in the environment |
+
+### Why Taller Walls Help SLAM
+
+The 3-meter walls provide significantly more vertical surface for lidar and depth cameras. This improves:
+
+- **2D SLAM** — more consistent scan matching since the lidar always hits a wall (no "over the wall" gaps)
+- **3D SLAM** — depth cameras see wall surfaces at varying heights, producing denser point clouds
+- **Visual SLAM** — textured walls provide distinctive visual features for loop closure and relocalization
+- **ArUco localization** — markers at known positions enable camera-based pose estimation as a complement to lidar SLAM
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `tb_worlds/worlds/sim_house_enhanced.sdf.xacro` | Enhanced world (3m walls, PBR textures, color fallbacks) |
+| `tb_worlds/worlds/textures/` | Wall texture images (brick, concrete, wood) |
+| `tb_worlds/models/aruco_id_{60,80}/` | ArUco marker models with OBJ meshes |
+| `tb_worlds/launch/aruco_marker_spawner.launch.py` | Spawns ArUco markers with 10s delay |
 
 ---
 
