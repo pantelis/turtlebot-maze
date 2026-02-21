@@ -18,25 +18,25 @@ Originally by Sebastian Castro, 2021-2024.
 ```mermaid
 graph LR
     subgraph ROS 2 Container
-        GAZ[Gazebo Simulation] -->|sensor_msgs/Image| CAM[/camera/image_raw]
-        NAV[Nav2 Stack] -->|navigation| TB[TurtleBot]
-        BT[Behavior Tree] -->|goals| NAV
-        BT -->|vision query| VIS[LookForObject]
+        GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image"| CAM["/camera/image_raw"]
+        NAV["Nav2 Stack"] -->|navigation| TB["TurtleBot"]
+        BT["Behavior Tree"] -->|goals| NAV
+        BT -->|"vision query"| VIS["LookForObject"]
     end
 
     subgraph Zenoh Transport
-        ZB[zenoh-bridge-ros2dds]
-        ZR[Zenoh Router]
+        ZB["zenoh-bridge-ros2dds"]
+        ZR["Zenoh Router"]
     end
 
     subgraph PyTorch Container
-        DET[YOLOv8 Detector]
+        DET["YOLOv8 Detector"]
     end
 
     CAM -->|DDS| ZB
-    ZB -->|rt/camera/image_raw| DET
-    DET -->|tb/detections JSON| ZB
-    ZB -->|Zenoh sub| VIS
+    ZB -->|"rt/camera/image_raw"| DET
+    DET -->|"tb/detections JSON"| ZB
+    ZB -->|"Zenoh sub"| VIS
 ```
 
 ### Docker Services
@@ -59,21 +59,21 @@ Two detection modes, switchable via the `DETECTOR_TYPE` environment variable:
 
 ```mermaid
 graph TD
-    subgraph HSV Mode — detector_type=hsv
-        IMG1[Camera Image] --> HSV[HSV Threshold + Blob Detection]
-        HSV --> MATCH1{Color Match?}
-        MATCH1 -->|yes| S1[BT SUCCESS]
-        MATCH1 -->|no| F1[BT FAILURE]
+    subgraph HSV_Mode["HSV Mode - detector_type=hsv"]
+        IMG1["Camera Image"] --> HSV["HSV Threshold + Blob Detection"]
+        HSV --> MATCH1{"Color Match?"}
+        MATCH1 -->|yes| S1["BT SUCCESS"]
+        MATCH1 -->|no| F1["BT FAILURE"]
     end
 
-    subgraph YOLO Mode — detector_type=yolo
-        IMG2[Camera Image] --> ZEN[Zenoh Bridge]
-        ZEN --> YOLO[YOLOv8 Inference]
-        YOLO --> JSON[JSON Detections]
-        JSON --> ZEN2[Zenoh → ROS]
-        ZEN2 --> MATCH2{Target Object?}
-        MATCH2 -->|yes| S2[BT SUCCESS]
-        MATCH2 -->|no| F2[BT FAILURE]
+    subgraph YOLO_Mode["YOLO Mode - detector_type=yolo"]
+        IMG2["Camera Image"] --> ZEN["Zenoh Bridge"]
+        ZEN --> YOLO["YOLOv8 Inference"]
+        YOLO --> JSON["JSON Detections"]
+        JSON --> ZEN2["Zenoh to ROS"]
+        ZEN2 --> MATCH2{"Target Object?"}
+        MATCH2 -->|yes| S2["BT SUCCESS"]
+        MATCH2 -->|no| F2["BT FAILURE"]
     end
 ```
 
@@ -304,7 +304,7 @@ sequenceDiagram
 
     G->>B: sensor_msgs/Image (DDS)
     B->>D: rt/camera/image_raw (CDR via Zenoh)
-    D->>D: pycdr2 deserialize → YOLOv8 inference
+    D->>D: pycdr2 deserialize, YOLOv8 inference
     D->>B: tb/detections (JSON via Zenoh)
     B->>S: Subscribe tb/detections
     S->>BT: Cached detections
