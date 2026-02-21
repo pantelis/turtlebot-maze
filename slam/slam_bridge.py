@@ -3,8 +3,8 @@
 Zenoh-based stella_vslam SLAM bridge.
 
 Subscribes to ROS 2 camera images bridged via zenoh-bridge-ros2dds,
-writes frames to disk, runs stella_vslam in a subprocess,
-and publishes tracking status back over Zenoh.
+writes frames to a temp directory, runs the stella_vslam run_slam
+driver in a subprocess, and publishes tracking status back over Zenoh.
 
 Pattern matches detector/object_detector.py.
 """
@@ -16,14 +16,15 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 import cv2
 import numpy as np
 import zenoh
-from pycdr2 import IdlStruct
-from pycdr2.types import uint8, uint32, int32
 from dataclasses import dataclass
+from pycdr2 import IdlStruct
+from pycdr2.types import int32, uint8, uint32
 from typing import List
 
 
@@ -59,7 +60,7 @@ class SlamBridge:
         self.min_interval = 1.0 / args.max_fps
         self.running = True
 
-        # Temp directory for frame exchange with stella_vslam
+        # Temp directory for frame exchange with run_slam
         self.frame_dir = tempfile.mkdtemp(prefix="slam_frames_")
         print(f"Frame exchange dir: {self.frame_dir}")
 
@@ -75,6 +76,10 @@ class SlamBridge:
         # Start stella_vslam subprocess
         self.slam_proc = self._start_slam()
 
+        # Read pose output from run_slam stdout in background thread
+        self._pose_thread = threading.Thread(target=self._read_poses, daemon=True)
+        self._pose_thread.start()
+
         # Subscribe to camera images
         self.image_sub = self.session.declare_subscriber(
             args.image_key, self._image_callback
@@ -87,33 +92,36 @@ class SlamBridge:
         print(f"  Config:     {args.config}")
 
     def _start_slam(self):
-        """Start stella_vslam run_slam binary."""
+        """Start run_slam C++ driver."""
         cmd = [
             "run_slam",
             "-v",
             self.args.vocab,
             "-c",
             self.args.config,
-            "--frame-skip",
-            "1",
-            "--no-sleep",
-            "--auto-term",
+            "-d",
+            self.frame_dir,
             "--map-db-out",
             "/tmp/slam_map.msg",
         ]
 
-        if self.args.viewer:
-            cmd.extend(["--viewer", self.args.viewer])
-
-        print(f"Starting stella_vslam: {' '.join(cmd)}")
+        print(f"Starting run_slam: {' '.join(cmd)}")
 
         proc = subprocess.Popen(
             cmd,
-            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         return proc
+
+    def _read_poses(self):
+        """Read JSON pose lines from run_slam stdout and publish via Zenoh."""
+        for line in self.slam_proc.stdout:
+            if not self.running:
+                break
+            line = line.decode().strip()
+            if line:
+                self.pose_pub.put(line.encode())
 
     def _image_callback(self, sample):
         """Handle incoming camera image from Zenoh."""
@@ -144,7 +152,7 @@ class SlamBridge:
             print(f"Unsupported encoding: {img_msg.encoding}")
             return
 
-        # Save frame for stella_vslam to consume
+        # Save frame for run_slam to consume
         frame_path = os.path.join(self.frame_dir, f"frame_{self.frame_count:06d}.png")
         cv2.imwrite(frame_path, frame)
         self.frame_count += 1
@@ -164,6 +172,13 @@ class SlamBridge:
         """Main loop."""
         try:
             while self.running:
+                # Check if run_slam exited unexpectedly
+                if self.slam_proc.poll() is not None:
+                    print(
+                        f"run_slam exited with code {self.slam_proc.returncode}",
+                        file=sys.stderr,
+                    )
+                    break
                 time.sleep(1.0)
         except KeyboardInterrupt:
             pass
@@ -175,9 +190,17 @@ class SlamBridge:
         self.running = False
         print("Shutting down SLAM bridge...")
 
+        # Signal run_slam to stop
+        done_path = os.path.join(self.frame_dir, ".done")
+        with open(done_path, "w") as f:
+            f.write("")
+
         if self.slam_proc and self.slam_proc.poll() is None:
             self.slam_proc.terminate()
-            self.slam_proc.wait(timeout=10)
+            try:
+                self.slam_proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.slam_proc.kill()
 
         self.image_sub.undeclare()
         self.pose_pub.undeclare()
@@ -206,7 +229,7 @@ def main():
         "--depth-key",
         type=str,
         default="rt/intel_realsense_r200_depth/depth_image",
-        help="Zenoh key for depth images",
+        help="Zenoh key for depth images (reserved for future RGBD mode)",
     )
     parser.add_argument(
         "--pose-key",
@@ -233,12 +256,6 @@ def main():
         type=str,
         default="/slam/vocab/orb_vocab.fbow",
         help="Path to ORB vocabulary file",
-    )
-    parser.add_argument(
-        "--viewer",
-        type=str,
-        default="socket_publisher",
-        help="Viewer type: socket_publisher, pangolin_viewer, or none",
     )
     parser.add_argument(
         "--max-fps",

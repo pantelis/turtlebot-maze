@@ -173,7 +173,6 @@ services:
       --depth-key "rt/intel_realsense_r200_depth/depth_image"
       --config /slam/config/turtlebot_realsense.yaml
       --vocab /slam/vocab/orb_vocab.fbow
-      --viewer socket_publisher
 
 # # Docker Compose file for TurtleBot3 Behavior Examples
 # #

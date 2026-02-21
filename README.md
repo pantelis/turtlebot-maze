@@ -364,7 +364,7 @@ docker compose up zenoh-router zenoh-bridge
 docker compose up demo-slam
 ```
 
-The socket viewer is accessible at `http://localhost:3001` to visualize the reconstructed map and camera trajectory.
+Pose estimates are published over Zenoh on key `tb/slam/pose` as JSON.
 
 ### Data Flow
 
