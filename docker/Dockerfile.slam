@@ -1,0 +1,96 @@
+# Multi-stage build for stella_vslam Visual SLAM
+# Pattern: same as Dockerfile.torch.gpu (standalone, Zenoh transport, no ROS)
+
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake git wget curl unzip ca-certificates pkg-config \
+    libglm-dev libglfw3-dev libpng-dev libjpeg-dev \
+    libeigen3-dev libboost-filesystem-dev libboost-program-options-dev \
+    libopencv-dev libsuitesparse-dev \
+    libgoogle-glog-dev libgflags-dev libatlas-base-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build iridescence (3D viewer library)
+WORKDIR /build
+RUN git clone https://github.com/koide3/iridescence.git \
+    && cd iridescence \
+    && git checkout 085322e0c949f75b67d24d361784e85ad7f197ab \
+    && git submodule update --init --recursive \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Build g2o (graph optimization, required by stella_vslam)
+RUN git clone --depth 1 https://github.com/RainerKuemmerle/g2o.git \
+    && cd g2o \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DBUILD_WITH_MARCH_NATIVE=OFF \
+        -DG2O_BUILD_EXAMPLES=OFF \
+        -DG2O_BUILD_APPS=OFF \
+        .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Build stella_vslam core
+RUN git clone --recursive --depth 1 https://github.com/stella-cv/stella_vslam.git \
+    && cd stella_vslam \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Build socket viewer (browser-based map visualization on port 3001)
+RUN git clone --recursive https://github.com/stella-cv/socket_viewer.git \
+    && cd socket_viewer \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Download ORB vocabulary
+RUN mkdir -p /slam/vocab \
+    && wget -qO /slam/vocab/orb_vocab.fbow \
+       "https://github.com/stella-cv/FBoW_orb_vocab/raw/main/orb_vocab.fbow"
+
+# ---- Runtime image ----
+FROM ubuntu:24.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Runtime dependencies (lib names for Ubuntu 24.04 Noble)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglfw3 libpng16-16t64 libjpeg8 \
+    libboost-filesystem1.83.0 libboost-program-options1.83.0 \
+    libopencv-core406t64 libopencv-imgproc406t64 libopencv-imgcodecs406t64 \
+    libopencv-features2d406t64 libopencv-highgui406t64 libopencv-calib3d406t64 \
+    libsuitesparseconfig7 libcholmod5 libccolamd3 libcamd3 libamd3 \
+    libgoogle-glog0v6t64 libatlas3-base \
+    python3 python3-pip python3-numpy \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python Zenoh + CDR deserialization
+RUN pip3 install --break-system-packages eclipse-zenoh pycdr2 opencv-python-headless
+
+# Copy built artifacts from builder
+COPY --from=builder /usr/local/lib/ /usr/local/lib/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+COPY --from=builder /usr/local/include/ /usr/local/include/
+COPY --from=builder /slam/vocab/orb_vocab.fbow /slam/vocab/orb_vocab.fbow
+
+# Copy FBoW shared lib (built inside stella_vslam)
+COPY --from=builder /build/stella_vslam/build/3rd/FBoW/ /usr/local/lib/fbow/
+
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib/fbow:${LD_LIBRARY_PATH}"
+RUN ldconfig
+
+# Copy slam bridge script and config
+WORKDIR /slam
+COPY slam/ /slam/
+
+ENTRYPOINT ["python3", "/slam/slam_bridge.py"]
