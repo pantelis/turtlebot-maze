@@ -155,6 +155,26 @@ services:
     working_dir: /app
     command: python object_detector.py --confidence 0.5 --model yolov8n.pt
 
+  # stella_vslam Visual SLAM (standalone, Zenoh transport)
+  demo-slam:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.slam
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY
+      - ZENOH_ROUTER=tcp/localhost:7447
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command: >
+      python3 /slam/slam_bridge.py
+      --image-key "rt/intel_realsense_r200_depth/image"
+      --depth-key "rt/intel_realsense_r200_depth/depth_image"
+      --config /slam/config/turtlebot_realsense.yaml
+      --vocab /slam/vocab/orb_vocab.fbow
+      --viewer socket_publisher
+
 # # Docker Compose file for TurtleBot3 Behavior Examples
 # #
 # # Usage:
