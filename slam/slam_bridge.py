@@ -145,9 +145,7 @@ class SlamBridge:
             return
 
         # Save frame for stella_vslam to consume
-        frame_path = os.path.join(
-            self.frame_dir, f"frame_{self.frame_count:06d}.png"
-        )
+        frame_path = os.path.join(self.frame_dir, f"frame_{self.frame_count:06d}.png")
         cv2.imwrite(frame_path, frame)
         self.frame_count += 1
 
