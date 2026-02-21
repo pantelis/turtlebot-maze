@@ -142,7 +142,7 @@ Append the following section to `README.md` after the "Zenoh + YOLOv8 Object Det
 
 ## ros-mcp-server Navigation Demo
 
-Control the TurtleBot from [Claude Code](https://claude.ai/claude-code) using natural language. The [ros-mcp-server](https://github.com/ros-mcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
+Control the TurtleBot from [Claude Code](https://claude.com/product/claude-code) using natural language. The [ros-mcp-server](https://github.com/robotmcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
 
 ### Setup
 

@@ -43,9 +43,7 @@ def generate_launch_description():
         # so the gz_spawn_model create node can resolve meshes
         with open(sdf_path, "r") as f:
             sdf_content = f.read()
-        sdf_content = sdf_content.replace(
-            f"model://{m['model_dir']}/", f"{model_dir}/"
-        )
+        sdf_content = sdf_content.replace(f"model://{m['model_dir']}/", f"{model_dir}/")
 
         # Write to a temp file (the create node needs a file path)
         tmp_sdf = tempfile.NamedTemporaryFile(

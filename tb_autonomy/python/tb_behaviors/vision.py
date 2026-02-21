@@ -158,9 +158,7 @@ class LookForObject(py_trees.behaviour.Behaviour):
                 return py_trees.common.Status.FAILURE
 
         # Filter for target object
-        matches = [
-            d for d in detections if d.get("class", "") == self.target_object
-        ]
+        matches = [d for d in detections if d.get("class", "") == self.target_object]
 
         if not matches:
             self.logger.info(
