@@ -7,7 +7,7 @@ The robot navigates a house environment searching for objects using vision (HSV 
 **Behavior trees** drive the autonomy — see [this introduction](https://roboticseabass.com/2021/05/08/introduction-to-behavior-trees/) or the [BT textbook](https://arxiv.org/abs/1709.00084).
 Docker workflows follow [this guide](https://roboticseabass.com/2023/07/09/updated-guide-docker-and-ros2/).
 
-Originally by Sebastian Castro, 2021-2024.
+Originally by Sebastian Castro, 2021-2024. As of 2025, Pantelis Monogioudis and staff are enhancing the original implementation with Object Detection, VSLAM, and other AI algorithms.  
 
 ---
 
