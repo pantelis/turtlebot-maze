@@ -34,7 +34,7 @@ graph LR
     end
 
     CAM -->|DDS| ZB
-    ZB -->|"rt/camera/image_raw"| DET
+    ZB -->|"camera/image_raw"| DET
     DET -->|"tb/detections JSON"| ZB
     ZB -->|"Zenoh sub"| VIS
 ```
@@ -393,7 +393,7 @@ sequenceDiagram
     participant BT as Behavior Tree
 
     G->>B: sensor_msgs/Image (DDS)
-    B->>D: rt/camera/image_raw (CDR via Zenoh)
+    B->>D: camera/image_raw (CDR via Zenoh)
     D->>D: pycdr2 deserialize, YOLOv8 inference
     D->>B: tb/detections (JSON via Zenoh)
     B->>S: Subscribe tb/detections
@@ -405,7 +405,7 @@ sequenceDiagram
 
 | Key | Direction | Format | Description |
 |---|---|---|---|
-| `rt/camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
+| `camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
 | `tb/detections` | Detector → ROS | JSON array | Detection results |
 
 ### Detection JSON Format
@@ -424,7 +424,7 @@ python object_detector.py \
   --model yolov8n.pt \
   --confidence 0.5 \
   --max-fps 10 \
-  --image-key "rt/camera/image_raw" \
+  --image-key "camera/image_raw" \
   --detection-key "tb/detections"
 ```
 
