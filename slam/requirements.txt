@@ -1,0 +1,4 @@
+eclipse-zenoh
+pycdr2
+opencv-python-headless
+numpy

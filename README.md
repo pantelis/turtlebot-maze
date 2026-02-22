@@ -34,7 +34,7 @@ graph LR
     end
 
     CAM -->|DDS| ZB
-    ZB -->|"rt/camera/image_raw"| DET
+    ZB -->|"camera/image_raw"| DET
     DET -->|"tb/detections JSON"| ZB
     ZB -->|"Zenoh sub"| VIS
 ```
@@ -345,6 +345,39 @@ The 3-meter walls provide significantly more vertical surface for lidar and dept
 
 ---
 
+## Visual SLAM with stella_vslam
+
+Run [stella_vslam](https://github.com/stella-cv/stella_vslam) Visual SLAM on the TurtleBot's camera feed. The SLAM container subscribes to camera images via Zenoh (same transport pattern as the YOLO detector) and builds a 3D map of the environment.
+
+The enhanced maze world (`demo-world-enhanced`) with textured walls provides significantly better visual features for SLAM compared to the original featureless walls.
+
+### Launch
+
+```bash
+# Terminal 1: Enhanced world (textured walls)
+docker compose up demo-world-enhanced
+
+# Terminal 2: Zenoh transport
+docker compose up zenoh-router zenoh-bridge
+
+# Terminal 3: Visual SLAM
+docker compose up demo-slam
+```
+
+Pose estimates are published over Zenoh on key `tb/slam/pose` as JSON.
+
+### Data Flow
+
+Camera images flow from Gazebo through the Zenoh bridge to the SLAM container:
+
+```
+Gazebo Camera → DDS → zenoh-bridge → Zenoh → slam_bridge.py → stella_vslam
+```
+
+Pose estimates are published back via Zenoh on key `tb/slam/pose`.
+
+---
+
 ## Zenoh + YOLOv8 Object Detection
 
 The YOLO pipeline uses [Eclipse Zenoh](https://zenoh.io/) to decouple the ROS 2 simulation from the PyTorch inference container. This follows the [zenoh-python-lidar-plot](https://github.com/eclipse-zenoh/zenoh-demos/tree/main/ROS2/zenoh-python-lidar-plot) pattern.
@@ -360,7 +393,7 @@ sequenceDiagram
     participant BT as Behavior Tree
 
     G->>B: sensor_msgs/Image (DDS)
-    B->>D: rt/camera/image_raw (CDR via Zenoh)
+    B->>D: camera/image_raw (CDR via Zenoh)
     D->>D: pycdr2 deserialize, YOLOv8 inference
     D->>B: tb/detections (JSON via Zenoh)
     B->>S: Subscribe tb/detections
@@ -372,7 +405,7 @@ sequenceDiagram
 
 | Key | Direction | Format | Description |
 |---|---|---|---|
-| `rt/camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
+| `camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
 | `tb/detections` | Detector → ROS | JSON array | Detection results |
 
 ### Detection JSON Format
@@ -391,7 +424,7 @@ python object_detector.py \
   --model yolov8n.pt \
   --confidence 0.5 \
   --max-fps 10 \
-  --image-key "rt/camera/image_raw" \
+  --image-key "camera/image_raw" \
   --detection-key "tb/detections"
 ```
 

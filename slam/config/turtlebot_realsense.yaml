@@ -1,0 +1,56 @@
+# stella_vslam camera config for TurtleBot3 Waffle simulated RealSense R200
+# Intrinsics derived from gz_waffle.sdf.xacro (horizontal_fov=1.047, 320x240)
+
+Camera:
+  name: "TurtleBot3 Waffle RealSense R200 (simulated)"
+  setup: "RGBD"
+  model: "perspective"
+
+  # fx = fy = width / (2 * tan(hfov/2)) = 320 / (2 * tan(0.5235)) = 277.13
+  fx: 277.13
+  fy: 277.13
+  cx: 160.0
+  cy: 120.0
+
+  # No distortion in simulation
+  k1: 0.0
+  k2: 0.0
+  p1: 0.0
+  p2: 0.0
+  k3: 0.0
+
+  fps: 5.0
+  cols: 320
+  rows: 240
+
+  # RGBD-specific
+  focal_x_baseline: 27.713
+  depth_threshold: 5.0
+  color_order: "RGB"
+
+Preprocessing:
+  min_size: 320
+  depthmap_factor: 1.0
+
+Feature:
+  name: "ORB for low-res simulation camera"
+  scale_factor: 1.2
+  num_levels: 8
+  ini_fast_threshold: 20
+  min_fast_threshold: 7
+
+Mapping:
+  baseline_dist_thr: 0.1
+  redundant_obs_ratio_thr: 0.9
+
+SocketViewer:
+  keyframe_size: 0.07
+  keyframe_line_width: 1
+  graph_line_width: 1
+  point_size: 2
+  camera_size: 0.08
+  camera_line_width: 3
+  viewpoint_x: 0
+  viewpoint_y: -0.65
+  viewpoint_z: -1.9
+  viewpoint_f: 400

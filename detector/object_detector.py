@@ -75,7 +75,7 @@ def main():
     parser.add_argument(
         "--image-key",
         type=str,
-        default="rt/camera/image_raw",
+        default="camera/image_raw",
         help="Zenoh key for camera images (bridged from ROS 2)",
     )
     parser.add_argument(
