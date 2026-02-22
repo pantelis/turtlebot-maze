@@ -61,7 +61,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libboost-filesystem1.83.0 libboost-program-options1.83.0 \
     libopencv-core406t64 libopencv-imgproc406t64 libopencv-imgcodecs406t64 \
     libopencv-features2d406t64 libopencv-highgui406t64 libopencv-calib3d406t64 \
-    libsuitesparseconfig7 libcholmod5 libccolamd3 libcamd3 libamd3 \
+    libopencv-objdetect406t64 \
+    libsuitesparseconfig7 libcholmod5 libccolamd3 libcamd3 libamd3 libcxsparse4 \
     libgoogle-glog0v6t64 libatlas3-base \
     libyaml-cpp0.8 libsqlite3-0 libspdlog1.12 \
     python3 python3-pip python3-numpy \
@@ -81,7 +82,10 @@ COPY --from=builder /slam/vocab/orb_vocab.fbow /slam/vocab/orb_vocab.fbow
 COPY --from=builder /build/stella_vslam/build/3rd/FBoW/ /usr/local/lib/fbow/
 
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib/fbow:${LD_LIBRARY_PATH}"
-RUN ldconfig
+# OpenCV 4.6 merged aruco into objdetect; create compat symlink
+RUN ln -s /usr/lib/x86_64-linux-gnu/libopencv_objdetect.so.406 \
+    /usr/lib/x86_64-linux-gnu/libopencv_aruco.so.406 \
+    && ldconfig
 
 # Copy slam bridge script and config
 WORKDIR /slam
