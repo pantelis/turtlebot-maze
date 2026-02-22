@@ -19,6 +19,7 @@ Originally by Sebastian Castro, 2021-2024. As of 2025, Pantelis Monogioudis and 
 graph LR
     subgraph ROS 2 Container
         GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image"| CAM["/camera/image_raw"]
+        GAZ -->|"sensor_msgs/Image"| DEPTH["/realsense/image_raw"]
         NAV["Nav2 Stack"] -->|navigation| TB["TurtleBot"]
         BT["Behavior Tree"] -->|goals| NAV
         BT -->|"vision query"| VIS["LookForObject"]
@@ -33,10 +34,18 @@ graph LR
         DET["YOLOv8 Detector"]
     end
 
+    subgraph SLAM Container
+        SB["slam_bridge.py"] --> RS["run_slam (stella_vslam)"]
+        RS -->|"JSON pose"| SB
+    end
+
     CAM -->|DDS| ZB
+    DEPTH -->|DDS| ZB
     ZB -->|"camera/image_raw"| DET
     DET -->|"tb/detections JSON"| ZB
     ZB -->|"Zenoh sub"| VIS
+    ZB -->|"realsense/image_raw"| SB
+    SB -->|"tb/slam/pose"| ZB
 ```
 
 ### Docker Services
@@ -53,6 +62,7 @@ graph LR
 | `zenoh-router` | `eclipse/zenoh:latest` | Zenoh router for pub/sub discovery |
 | `zenoh-bridge` | extends `overlay` | `zenoh-bridge-ros2dds` — bridges DDS topics to Zenoh keys |
 | `detector` | `Dockerfile.torch.gpu` | PyTorch YOLOv8 object detector (zero ROS dependencies) |
+| `demo-slam` | `Dockerfile.slam` | stella_vslam Visual SLAM with Zenoh transport (zero ROS dependencies) |
 
 ### Vision Pipeline
 
