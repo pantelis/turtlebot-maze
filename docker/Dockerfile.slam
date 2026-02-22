@@ -1,0 +1,95 @@
+# Multi-stage build for stella_vslam Visual SLAM
+# Pattern: same as Dockerfile.torch.gpu (standalone, Zenoh transport, no ROS)
+
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake git wget curl unzip ca-certificates pkg-config \
+    libpng-dev libjpeg-dev \
+    libeigen3-dev libboost-filesystem-dev libboost-program-options-dev \
+    libopencv-dev libsuitesparse-dev \
+    libgoogle-glog-dev libgflags-dev libatlas-base-dev libyaml-cpp-dev \
+    libsqlite3-dev libspdlog-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build g2o (graph optimization, required by stella_vslam)
+WORKDIR /build
+RUN git clone --depth 1 https://github.com/RainerKuemmerle/g2o.git \
+    && cd g2o \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DBUILD_WITH_MARCH_NATIVE=OFF \
+        -DG2O_BUILD_EXAMPLES=OFF \
+        -DG2O_BUILD_APPS=OFF \
+        -DG2O_USE_OPENGL=OFF \
+        .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Build stella_vslam core
+RUN git clone --recursive --depth 1 https://github.com/stella-cv/stella_vslam.git \
+    && cd stella_vslam \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Build our minimal run_slam driver
+COPY slam/run_slam.cc slam/CMakeLists.txt /build/slam_driver/
+RUN cd /build/slam_driver \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# Download ORB vocabulary
+RUN mkdir -p /slam/vocab \
+    && wget -qO /slam/vocab/orb_vocab.fbow \
+       "https://github.com/stella-cv/FBoW_orb_vocab/raw/main/orb_vocab.fbow"
+
+# ---- Runtime image ----
+FROM ubuntu:24.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Runtime dependencies (lib names for Ubuntu 24.04 Noble)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpng16-16t64 libjpeg8 \
+    libboost-filesystem1.83.0 libboost-program-options1.83.0 \
+    libopencv-core406t64 libopencv-imgproc406t64 libopencv-imgcodecs406t64 \
+    libopencv-features2d406t64 libopencv-highgui406t64 libopencv-calib3d406t64 \
+    libopencv-objdetect406t64 \
+    libsuitesparseconfig7 libcholmod5 libccolamd3 libcamd3 libamd3 libcxsparse4 \
+    libgoogle-glog0v6t64 libatlas3-base \
+    libyaml-cpp0.8 libsqlite3-0 libspdlog1.12 \
+    python3 python3-pip python3-numpy \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python Zenoh + CDR deserialization
+RUN pip3 install --break-system-packages --no-deps opencv-python-headless \
+    && pip3 install --break-system-packages eclipse-zenoh pycdr2
+
+# Copy built artifacts from builder
+COPY --from=builder /usr/local/lib/ /usr/local/lib/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+COPY --from=builder /usr/local/include/ /usr/local/include/
+COPY --from=builder /slam/vocab/orb_vocab.fbow /slam/vocab/orb_vocab.fbow
+
+# Copy FBoW shared lib (built inside stella_vslam)
+COPY --from=builder /build/stella_vslam/build/3rd/FBoW/ /usr/local/lib/fbow/
+
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib/fbow:${LD_LIBRARY_PATH}"
+# OpenCV 4.6 merged aruco into objdetect; create compat symlink
+RUN ln -s /usr/lib/x86_64-linux-gnu/libopencv_objdetect.so.406 \
+    /usr/lib/x86_64-linux-gnu/libopencv_aruco.so.406 \
+    && ldconfig
+
+# Copy slam bridge script and config
+WORKDIR /slam
+COPY slam/slam_bridge.py /slam/
+COPY slam/config/ /slam/config/
+
+ENTRYPOINT ["python3", "/slam/slam_bridge.py"]
