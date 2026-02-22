@@ -15,22 +15,32 @@ def generate_launch_description():
         "gz_spawn_model.launch.py",
     )
 
+    # Markers mounted on walls, facing into rooms.
+    # Panel is 0.3x0.3m flat in XY. To mount vertically on a wall:
+    #   P=pi/2 stands it up (face points +X)
+    #   Add Y rotation to face into the room.
     markers = [
         {
+            # On west wall at x=-1.1, facing east (+x) into bottom-left room
             "name": "aruco_id_80",
             "model_dir": "aruco_id_80",
-            "x": "-1.0",
-            "y": "-2.0",
-            "z": "0.01",
-            "Y": "0",
+            "x": "-1.08",
+            "y": "0.0",
+            "z": "0.2",
+            "R": "0.0",
+            "P": "1.5708",
+            "Y": "0.0",
         },
         {
+            # On west wall at x=2.1, facing east (+x) into upper-right room
             "name": "aruco_id_60",
             "model_dir": "aruco_id_60",
-            "x": "-1.5",
-            "y": "-2.05",
-            "z": "0.23",
-            "Y": "0",
+            "x": "2.12",
+            "y": "2.5",
+            "z": "0.2",
+            "R": "0.0",
+            "P": "1.5708",
+            "Y": "0.0",
         },
     ]
 
@@ -65,6 +75,8 @@ def generate_launch_description():
                     "x": m["x"],
                     "y": m["y"],
                     "z": m["z"],
+                    "R": m.get("R", "0.0"),
+                    "P": m.get("P", "0.0"),
                     "Y": m["Y"],
                 }.items(),
             )
