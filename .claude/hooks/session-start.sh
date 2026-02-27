@@ -1,7 +1,27 @@
 #!/bin/bash
 set -euo pipefail
 
-# Only run in remote (Claude Code on the web) environments
+# Ensure dolt sql-server is running for beads_turtlebot-maze (port 3308)
+DOLT_DB_DIR="$CLAUDE_PROJECT_DIR/.beads/dolt/beads_turtlebot-maze"
+DOLT_PORT=3308
+DOLT_LOG="/tmp/dolt-turtlebot-maze.log"
+
+if command -v dolt &>/dev/null && [ -d "$DOLT_DB_DIR" ]; then
+  if ! ss -tlnp 2>/dev/null | grep -q ":${DOLT_PORT} "; then
+    nohup dolt sql-server \
+      --port="${DOLT_PORT}" \
+      --host=127.0.0.1 \
+      --loglevel=warning \
+      > "${DOLT_LOG}" 2>&1 &
+    # Wait up to 5s for server to be ready
+    for i in 1 2 3 4 5; do
+      sleep 1
+      ss -tlnp 2>/dev/null | grep -q ":${DOLT_PORT} " && break
+    done
+  fi
+fi
+
+# Only run the rest in remote (Claude Code on the web) environments
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
