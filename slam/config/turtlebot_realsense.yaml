@@ -1,9 +1,9 @@
-# stella_vslam camera config for TurtleBot3 Waffle simulated RealSense R200
+# stella_vslam monocular camera config for TurtleBot3 Waffle simulated camera
 # Intrinsics derived from gz_waffle.sdf.xacro (horizontal_fov=1.047, 320x240)
 
 Camera:
-  name: "TurtleBot3 Waffle RealSense R200 (simulated)"
-  setup: "RGBD"
+  name: "TurtleBot3 Waffle simulated camera (monocular)"
+  setup: "monocular"
   model: "perspective"
 
   # fx = fy = width / (2 * tan(hfov/2)) = 320 / (2 * tan(0.5235)) = 277.13
@@ -23,21 +23,21 @@ Camera:
   cols: 320
   rows: 240
 
-  # RGBD-specific
-  focal_x_baseline: 27.713
-  depth_threshold: 5.0
-  color_order: "RGB"
+  # slam_bridge.py always delivers BGR frames (cv2 native ordering)
+  color_order: "BGR"
 
 Preprocessing:
-  min_size: 320
-  depthmap_factor: 1.0
+  # min_size must be <= min(cols, rows) = 240 to allow feature extraction
+  min_size: 200
 
 Feature:
   name: "ORB for low-res simulation camera"
   scale_factor: 1.2
-  num_levels: 8
-  ini_fast_threshold: 20
-  min_fast_threshold: 7
+  # Fewer pyramid levels for low resolution — avoids sub-pixel patches
+  num_levels: 6
+  # Lower thresholds to get enough features on simulated images
+  ini_fast_threshold: 10
+  min_fast_threshold: 3
 
 Mapping:
   baseline_dist_thr: 0.1
