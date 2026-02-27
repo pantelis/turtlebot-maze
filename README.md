@@ -61,6 +61,8 @@ graph LR
 | `demo-behavior-cpp` | extends `overlay` | C++ behavior tree demo (BehaviorTree.CPP) |
 | `zenoh-router` | `eclipse/zenoh:latest` | Zenoh router for pub/sub discovery |
 | `zenoh-bridge` | extends `overlay` | `zenoh-bridge-ros2dds` — bridges DDS topics to Zenoh keys |
+| `foxglove-bridge` | extends `overlay` | `foxglove-bridge` WebSocket server on port 8765 for Foxglove Studio |
+| `rosbridge` | extends `overlay` | rosbridge WebSocket server on port 9090 for ros-mcp-server |
 | `detector` | `Dockerfile.torch.gpu` | PyTorch YOLOv8 object detector (zero ROS dependencies) |
 | `demo-slam` | `Dockerfile.slam` | stella_vslam Visual SLAM with Zenoh transport (zero ROS dependencies) |
 
@@ -455,6 +457,52 @@ python object_detector.py \
   --image-key "camera/image_raw" \
   --detection-key "tb/detections"
 ```
+
+---
+
+## Foxglove Visualization
+
+[Foxglove](https://foxglove.dev) provides a browser-based dashboard for visualizing ROS 2 topics in real time. The `foxglove-bridge` service exposes all topics via WebSocket on port 8765.
+
+### Launch
+
+```bash
+# Terminal 1: Simulation
+docker compose up demo-world-enhanced
+
+# Terminal 2: Foxglove bridge
+docker compose up foxglove-bridge
+```
+
+### Connect
+
+1. Open **[app.foxglove.dev](https://app.foxglove.dev)** in your browser
+2. Click **Open connection → WebSocket**
+3. Enter `ws://localhost:8765` and click **Open**
+
+The bridge uses the `foxglove.sdk.v1` protocol (foxglove-bridge v3+). All 90+ ROS 2 topics are immediately available in the **Topics** panel on the left.
+
+### Load the Pre-built Layout
+
+A ready-made 4-panel layout is included at `foxglove/turtlebot_maze.json`:
+
+1. In Foxglove, click the layout name in the top bar → **Import from file…**
+2. Select `foxglove/turtlebot_maze.json` from the repo root
+3. All panels populate automatically
+
+| Panel | Topics used | What you see |
+|-------|------------|--------------|
+| **3D view** (left 62%) | `/map`, `/scan`, `/amcl_pose`, `/particle_cloud`, `/plan`, `/local_plan`, `/tf` | Occupancy grid, laser scan (red), AMCL particle cloud (blue), global path (green), local path (orange), TF axes — camera follows `base_footprint` top-down |
+| **Camera** (top right) | `/camera/image_raw` | Live robot camera feed |
+| **Velocity plot** (mid right) | `/cmd_vel` | `linear.x` and `angular.z` over a 15 s rolling window |
+| **Pose inspector** (bottom right) | `/amcl_pose` | Raw x, y, quaternion values |
+
+### Docker Services Table Update
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| `foxglove-bridge` | 8765 | WebSocket bridge — connects Foxglove to all ROS 2 topics |
+| `rosbridge` | 9090 | rosbridge WebSocket — used by ros-mcp-server |
 
 ---
 
