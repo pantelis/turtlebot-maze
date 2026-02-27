@@ -1,8 +1,9 @@
 services:
   dev:
     volumes:
-      # Mount the project source into the VS Code workspace folder
-      - .:/workspaces/turtlebot-maze:cached
+      # Mount the project root (parent of .devcontainer/) into the VS Code workspace folder.
+      # Use '..' because relative paths in compose are relative to this file's location.
+      - ..:/workspaces/turtlebot-maze:cached
 
     # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
     # cap_add:
