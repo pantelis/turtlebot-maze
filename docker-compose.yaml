@@ -112,6 +112,15 @@ services:
       detector_type:=${DETECTOR_TYPE:-hsv}
       target_object:=${TARGET_OBJECT:-cup}
 
+  # Foxglove WebSocket bridge — connects app.foxglove.dev to all ROS 2 topics
+  # Open https://app.foxglove.dev, choose "Open connection", WebSocket,
+  # enter ws://localhost:8765
+  foxglove-bridge:
+    extends: overlay
+    command: ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765
+    ports:
+      - "8765:8765"
+
   # Rosbridge WebSocket server for ros-mcp-server integration
   rosbridge:
     extends: overlay
