@@ -84,6 +84,10 @@ class SlamBridge:
         self._pose_thread = threading.Thread(target=self._read_poses, daemon=True)
         self._pose_thread.start()
 
+        # Forward run_slam stderr to our stderr (so it appears in docker logs)
+        self._stderr_thread = threading.Thread(target=self._forward_stderr, daemon=True)
+        self._stderr_thread.start()
+
         # Subscribe to camera images
         self.image_sub = self.session.declare_subscriber(
             args.image_key, self._image_callback
@@ -116,6 +120,12 @@ class SlamBridge:
             stderr=subprocess.PIPE,
         )
         return proc
+
+    def _forward_stderr(self):
+        """Forward run_slam stderr to our stderr so it appears in docker logs."""
+        for line in self.slam_proc.stderr:
+            sys.stderr.write(line.decode())
+            sys.stderr.flush()
 
     def _read_poses(self):
         """Read JSON pose lines from run_slam stdout and publish via Zenoh."""
