@@ -1,0 +1,144 @@
+{
+  "configById": {
+    "3d!map": {
+      "cameraState": {
+        "distance": 12,
+        "perspective": false,
+        "phi": 0,
+        "target": [0, 0, 0],
+        "targetOffset": [0, 0, 0],
+        "targetOrientation": [0, 0, 0, 1],
+        "thetaOffset": 0,
+        "fovy": 45,
+        "near": 0.001,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "followTf": "base_footprint",
+      "topics": {
+        "/map": {
+          "visible": true,
+          "colorMode": "custom",
+          "minColor": "#000033",
+          "maxColor": "#ffffff"
+        },
+        "/scan": {
+          "visible": true,
+          "colorMode": "flat",
+          "flatColor": "#ff4444",
+          "pointSize": 3
+        },
+        "/amcl_pose": {
+          "visible": true
+        },
+        "/particle_cloud": {
+          "visible": true,
+          "sizeMode": "fixed",
+          "flatColor": "#44aaff",
+          "pointSize": 2
+        },
+        "/local_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap"
+        },
+        "/global_costmap/costmap": {
+          "visible": false
+        },
+        "/plan": {
+          "visible": true,
+          "lineWidth": 0.05,
+          "color": "#00ff88"
+        },
+        "/local_plan": {
+          "visible": true,
+          "lineWidth": 0.05,
+          "color": "#ffaa00"
+        },
+        "/tf": {
+          "visible": true,
+          "frameLabels": false,
+          "showAxes": true,
+          "lineWidth": 0.02,
+          "axisScale": 0.3
+        }
+      },
+      "layers": [],
+      "publish": {
+        "type": "point",
+        "pose": {
+          "position": {"x": 0, "y": 0, "z": 0},
+          "orientation": {"x": 0, "y": 0, "z": 0, "w": 1}
+        }
+      }
+    },
+
+    "Image!camera": {
+      "cameraTopic": "/camera/image_raw",
+      "calibrationTopic": "",
+      "flipHorizontal": false,
+      "flipVertical": false,
+      "rotation": 0,
+      "smooth": false,
+      "minValue": 0,
+      "maxValue": 10000
+    },
+
+    "Plot!velocity": {
+      "title": "Robot Velocity",
+      "xAxisVal": "timestamp",
+      "paths": [
+        {
+          "value": "/cmd_vel.twist.linear.x",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "color": "#4caf50",
+          "label": "linear.x (m/s)"
+        },
+        {
+          "value": "/cmd_vel.twist.angular.z",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "color": "#ff9800",
+          "label": "angular.z (rad/s)"
+        }
+      ],
+      "minYValue": -1.5,
+      "maxYValue": 1.5,
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisPath": "",
+      "followingViewWidth": 15
+    },
+
+    "RawMessages!pose": {
+      "topicPath": "/amcl_pose.pose.pose"
+    }
+  },
+
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+
+  "layout": {
+    "direction": "row",
+    "first": "3d!map",
+    "second": {
+      "direction": "column",
+      "first": "Image!camera",
+      "second": {
+        "direction": "column",
+        "first": "Plot!velocity",
+        "second": "RawMessages!pose",
+        "splitPercentage": 55
+      },
+      "splitPercentage": 40
+    },
+    "splitPercentage": 62
+  }
+}
