@@ -506,6 +506,67 @@ A ready-made 4-panel layout is included at `foxglove/turtlebot_maze.json`:
 
 ---
 
+## Claude Code as a Robot Operator
+
+> **Demo video:** [Claude navigating a TurtleBot using natural language via ros-mcp-server](https://www.youtube.com/watch?v=a04nStJtvIo)
+
+Claude Code can act as an intelligent robot operator — issuing navigation goals, reading sensor feedback, and reasoning about the robot's state, all through plain English. No ROS knowledge required from the user.
+
+The key insight is that [ros-mcp-server](https://github.com/robotmcp/ros-mcp-server) exposes ROS 2 as a set of MCP tools that Claude can call directly. Claude reads topics, sends action goals, and interprets results the same way it reads files or runs shell commands — as structured tool calls inside a reasoning loop.
+
+### What Claude Can Do
+
+```
+User:  "Navigate the robot to the kitchen area"
+Claude: connects → checks Nav2 is ready → reads current pose →
+        sends NavigateToPose goal → monitors status → confirms arrival
+```
+
+```
+User:  "Where is the robot right now?"
+Claude: subscribes to /amcl_pose → reads x, y, yaw →
+        reports position in human-readable terms
+```
+
+```
+User:  "Is the robot stuck? It hasn't moved in a while"
+Claude: subscribes to /odom → compares velocity over time →
+        checks /diagnostics → reports whether motion is occurring
+```
+
+### How It Works
+
+```mermaid
+graph LR
+    U["User (natural language)"] --> CC["Claude Code"]
+    CC -->|MCP tool calls| MCP["ros-mcp-server"]
+    MCP -->|WebSocket JSON| RB["rosbridge\n(port 9090)"]
+    RB -->|DDS| NAV["Nav2 Stack"]
+    NAV -->|/amcl_pose, /odom| RB
+    RB -->|topic data| MCP
+    MCP -->|tool results| CC
+    CC --> U
+```
+
+Claude reasons over the tool results at each step — it checks whether Nav2 is ready before sending goals, polls action status while navigating, and reads the final pose to confirm arrival. This is the same loop a human operator would follow, expressed as an LLM reasoning chain.
+
+### Key MCP Tools Used
+
+| Tool | ROS equivalent | What Claude uses it for |
+|------|---------------|------------------------|
+| `connect_to_robot` | rosbridge connect | Establish WebSocket session |
+| `get_actions` | `ros2 action list` | Verify `/navigate_to_pose` is available |
+| `subscribe_once` | `ros2 topic echo --once` | Read current pose from `/amcl_pose` |
+| `send_action_goal` | `ros2 action send_goal` | Send `NavigateToPose` goal |
+| `get_action_status` | `ros2 action info` | Poll navigation progress |
+| `get_topics` | `ros2 topic list` | Discover available topics |
+
+### Safety
+
+`send_action_goal` requires manual approval every time — it is not pre-approved in Claude Code's permission model. Claude will show you the exact goal coordinates before sending. You approve or deny each robot command explicitly.
+
+---
+
 ## ros-mcp-server Navigation Demo
 
 Control the TurtleBot from [Claude Code](https://claude.com/product/claude-code) using natural language. The [ros-mcp-server](https://github.com/robotmcp/ros-mcp-server) connects Claude to the ROS 2 navigation stack via rosbridge WebSocket.
