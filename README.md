@@ -18,35 +18,35 @@ Originally by Sebastian Castro, 2021-2024. As of 2025, Pantelis Monogioudis and 
 ```mermaid
 graph LR
     subgraph ROS 2 Container
-        GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image (DDS)"| CAM["/camera/image_raw"]
-        GAZ -->|"sensor_msgs/Image (DDS)"| DEPTH["/realsense/image_raw"]
+        GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image"| CAM["/camera/image_raw"]
+        GAZ -->|"sensor_msgs/Image"| DEPTH["/realsense/image_raw"]
         NAV["Nav2 Stack"] -->|navigation| TB["TurtleBot"]
         BT["Behavior Tree"] -->|goals| NAV
-        BT -->|"vision query"| VIS["LookForObject\n(zenoh_detection_sub)"]
+        BT -->|"vision query"| VIS["LookForObject (zenoh_detection_sub)"]
     end
 
     subgraph Zenoh Transport
         ZB["zenoh-bridge-ros2dds"]
         ZR["Zenoh Router"]
-        ZB <-->|"peer"| ZR
+        ZB <-->|peer| ZR
     end
 
     subgraph PyTorch Container
-        DET["YOLOv8 Detector\n(no ROS)"]
+        DET["YOLOv8 Detector (no ROS)"]
     end
 
     subgraph SLAM Container
-        SB["slam_bridge.py\n(no ROS)"] --> RS["run_slam (stella_vslam)"]
+        SB["slam_bridge.py (no ROS)"] --> RS["run_slam (stella_vslam)"]
         RS -->|"JSON pose"| SB
     end
 
-    CAM -->|"DDS → Zenoh\ncamera/image_raw"| ZB
-    DEPTH -->|"DDS → Zenoh\nrealsense/image_raw"| ZB
-    ZR -->|"Zenoh\ncamera/image_raw"| DET
-    DET -->|"Zenoh\ntb/detections JSON"| ZR
-    ZR -->|"Zenoh\ntb/detections JSON"| VIS
-    ZR -->|"Zenoh\nrealsense/image_raw"| SB
-    SB -->|"Zenoh\ntb/slam/pose JSON"| ZR
+    CAM -->|"DDS: camera/image_raw"| ZB
+    DEPTH -->|"DDS: realsense/image_raw"| ZB
+    ZR -->|"Zenoh: camera/image_raw"| DET
+    DET -->|"Zenoh: tb/detections"| ZR
+    ZR -->|"Zenoh: tb/detections"| VIS
+    ZR -->|"Zenoh: realsense/image_raw"| SB
+    SB -->|"Zenoh: tb/slam/pose"| ZR
 ```
 
 ### Docker Services
