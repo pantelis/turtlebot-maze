@@ -282,8 +282,8 @@ docker compose up zenoh-router zenoh-bridge detector
 DETECTOR_TYPE=yolo TARGET_OBJECT=suitcase BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py
 ```
 
-> **`TARGET_OBJECT` and the colored blocks:** YOLOv8n does not have a "colored block" COCO class.
-> The simulation blocks are closest in appearance to a `suitcase` (50–60% confidence).
+> **`TARGET_OBJECT` and the colored blocks:** The COCO 80-class set has no `box` or `block` class.
+> The simulation blocks are closest in shape to a `suitcase` (rigid rectangular object, 50–60% confidence).
 > Use `TARGET_OBJECT=suitcase` to mirror what HSV mode finds with `TARGET_COLOR`.
 > Other objects visible in the enhanced world:
 >
