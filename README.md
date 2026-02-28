@@ -269,15 +269,51 @@ TARGET_COLOR=green BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behav
 
 ### YOLO Mode (Deep Learning)
 
-YOLO mode requires the Zenoh bridge and PyTorch detector services:
+YOLO mode requires the Zenoh bridge and PyTorch detector services.
+Run each command in a separate terminal, in order:
 
 ```bash
-# Start Zenoh transport + detector
+# Terminal 1: Enhanced world (textured walls + ArUco markers)
+docker compose up demo-world-enhanced
+
+# Terminal 2: Zenoh router + DDS bridge + YOLO detector
 docker compose up zenoh-router zenoh-bridge detector
 
-# In another terminal, start the behavior demo with YOLO mode
-DETECTOR_TYPE=yolo TARGET_OBJECT=cup docker compose up demo-behavior-py
+# Terminal 3: Behavior demo in YOLO mode
+DETECTOR_TYPE=yolo TARGET_OBJECT=suitcase BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py
 ```
+
+> **Choosing `TARGET_OBJECT`:** The YOLOv8n model detects any [COCO class](https://docs.ultralytics.com/datasets/detect/coco/) visible in the camera feed.
+> In the enhanced world with boxes placed, typical detections are:
+>
+> | Object in scene | YOLO class | Typical confidence |
+> |----------------|-----------|-------------------|
+> | Cardboard boxes | `suitcase` | 50–60% |
+> | Gazebo floor/furniture | `bed` | 50–70% |
+> | ArUco markers / wall panels | `tv` | 50–70% |
+>
+> To verify what YOLO sees before launching the behavior demo, subscribe to the `tb/detections` Zenoh key from inside the detector container:
+>
+> ```bash
+> docker compose exec detector python3 -c "
+> import zenoh, time, json
+> def cb(s):
+>     d = json.loads(s.payload.to_bytes())
+>     if d: print(d)
+> s = zenoh.open(zenoh.Config())
+> s.declare_subscriber('tb/detections', cb)
+> time.sleep(30)
+> "
+> ```
+
+To also visualise the robot and camera feed while the demo runs, start the Foxglove bridge in a fourth terminal:
+
+```bash
+# Terminal 4: Foxglove bridge (optional)
+docker compose up foxglove-bridge
+```
+
+Then open `ws://localhost:8765` in [app.foxglove.dev](https://app.foxglove.dev) and import `foxglove/turtlebot_maze.json`.
 
 ### Behavior Trees in Python
 
