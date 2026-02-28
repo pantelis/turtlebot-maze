@@ -245,10 +245,10 @@ docker compose exec -it dev bash
 
 ## Behavior Trees Demo
 
-The robot navigates known locations searching for objects. Two vision modes are available:
+The robot navigates known locations searching for the same colored blocks placed in the simulated house. Two vision modes are available:
 
-- **HSV mode** (default): Color thresholding in the [HSV color space](https://en.wikipedia.org/wiki/HSL_and_HSV) — finds colored blocks (red, green, blue)
-- **YOLO mode**: YOLOv8 deep learning — detects any [COCO class](https://docs.ultralytics.com/datasets/detect/coco/) object (cup, bottle, chair, etc.)
+- **HSV mode** (default): Color thresholding in the [HSV color space](https://en.wikipedia.org/wiki/HSL_and_HSV) — finds the colored blocks directly by hue (red, green, blue)
+- **YOLO mode**: YOLOv8 deep learning — finds the same colored blocks by their nearest [COCO class](https://docs.ultralytics.com/datasets/detect/coco/) label (the blocks appear as `suitcase` at 50–60% confidence with YOLOv8n)
 
 ### Starting the Simulation
 
@@ -282,12 +282,14 @@ docker compose up zenoh-router zenoh-bridge detector
 DETECTOR_TYPE=yolo TARGET_OBJECT=suitcase BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py
 ```
 
-> **Choosing `TARGET_OBJECT`:** The YOLOv8n model detects any [COCO class](https://docs.ultralytics.com/datasets/detect/coco/) visible in the camera feed.
-> In the enhanced world with boxes placed, typical detections are:
+> **`TARGET_OBJECT` and the colored blocks:** YOLOv8n does not have a "colored block" COCO class.
+> The simulation blocks are closest in appearance to a `suitcase` (50–60% confidence).
+> Use `TARGET_OBJECT=suitcase` to mirror what HSV mode finds with `TARGET_COLOR`.
+> Other objects visible in the enhanced world:
 >
 > | Object in scene | YOLO class | Typical confidence |
 > |----------------|-----------|-------------------|
-> | Cardboard boxes | `suitcase` | 50–60% |
+> | Colored blocks (HSV targets) | `suitcase` | 50–60% |
 > | Gazebo floor/furniture | `bed` | 50–70% |
 > | ArUco markers / wall panels | `tv` | 50–70% |
 >
