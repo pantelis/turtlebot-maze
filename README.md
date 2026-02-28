@@ -15,6 +15,8 @@ Originally by Sebastian Castro, 2021-2024. As of 2025, Pantelis Monogioudis and 
 
 ### System Overview
 
+The key architectural principle is that heavyweight ML inference (YOLOv8, stella_vslam) runs in standalone containers with **no ROS dependency**, communicating entirely via [Zenoh](https://zenoh.io/). Camera images enter Zenoh through `zenoh-bridge-ros2dds`; detection results (`tb/detections`) and SLAM poses (`tb/slam/pose`) are published back over Zenoh as JSON. The behavior tree node `zenoh_detection_sub` subscribes to `tb/detections` via Zenoh to bring results back into the ROS behavior tree — but the detection itself never touches ROS.
+
 ```mermaid
 graph LR
     subgraph ROS 2 Container
