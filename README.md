@@ -133,10 +133,9 @@ First, install Docker and Docker Compose using [the official install guide](http
 
 To run Docker containers with NVIDIA GPU support, you can optionally install the [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker).
 
+Clone this repository and go into the top-level folder:
 
-First, clone this repository and go into the top-level folder:
-
-```
+```bash
 git clone https://github.com/sea-bass/turtlebot3_behavior_demos.git
 cd turtlebot3_behavior_demos
 ```
@@ -144,9 +143,27 @@ cd turtlebot3_behavior_demos
 Build the Docker images.
 This will take a while and requires approximately 5 GB of disk space.
 
-```
+```bash
 docker compose build
 ```
+
+#### VSCode Dev Container
+
+Open the project in VSCode and select **Reopen in Container** when prompted. VSCode attaches to the **`dev`** service by default — a shell container with the full source tree mounted at `/workspaces/turtlebot-maze` and the ROS 2 workspace sourced. This is the right environment for editing code, running `colcon build`, and using ROS 2 CLI tools.
+
+The simulation (Gazebo + RViz2) is **not** started automatically. Launch it in a separate terminal on the host:
+
+```bash
+# Standard world
+docker compose up demo-world
+
+# Enhanced world (3 m textured walls + ArUco markers)
+docker compose up demo-world-enhanced
+```
+
+Because all services share `network_mode: host`, the `dev` container and the simulation container see the same ROS 2 topics. You can run `ros2 topic list`, navigate the robot, or trigger behavior trees from the VSCode terminal while Gazebo runs alongside.
+
+> **Note:** Do not run `demo-world` and `demo-world-enhanced` at the same time — both bind the same gz-sim ports.
 
 ### Local Setup
 
@@ -188,24 +205,6 @@ colcon build
 ```
 
 NOTE: For best results, we recommend that you change your ROS Middleware (RMW) implementation to Cyclone DDS by following [these instructions](https://docs.ros.org/en/jazzy/Installation/RMW-Implementations/DDS-Implementations/Working-with-Eclipse-CycloneDDS.html).
-
-### VSCode Dev Container
-
-Open the project in VSCode and select **Reopen in Container** when prompted. VSCode attaches to the **`dev`** service by default — a shell container with the full source tree mounted at `/workspaces/turtlebot-maze` and the ROS 2 workspace sourced. This is the right environment for editing code, running `colcon build`, and using ROS 2 CLI tools.
-
-The simulation (Gazebo + RViz2) is **not** started automatically. Launch it in a separate terminal on the host:
-
-```bash
-# Standard world
-docker compose up demo-world
-
-# Enhanced world (3 m textured walls + ArUco markers)
-docker compose up demo-world-enhanced
-```
-
-Because all services share `network_mode: host`, the `dev` container and the simulation container see the same ROS 2 topics. You can run `ros2 topic list`, navigate the robot, or trigger behavior trees from the VSCode terminal while Gazebo runs alongside.
-
-> **Note:** Do not run `demo-world` and `demo-world-enhanced` at the same time — both bind the same gz-sim ports.
 
 ---
 
