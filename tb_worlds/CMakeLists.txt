@@ -14,7 +14,7 @@ find_package(nav2_minimal_tb4_sim REQUIRED)
 
 # Install directories
 install(DIRECTORY
-  launch maps models worlds urdf configs
+  launch maps models worlds urdf configs rviz
   DESTINATION share/${PROJECT_NAME}
 )
 
