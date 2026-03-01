@@ -1,0 +1,50 @@
+/// Zenoh router configuration with storage-manager plugin.
+///
+/// Enables in-session queryable storage for object detection records.
+/// The memory volume is built into libzenoh_plugin_storage_manager.so —
+/// no additional backend image required.
+///
+/// To query stored detections (within a running session):
+///   python3 detector/query_detections.py --key tb/detections
+{
+  /// Allow plugins to load .so files from the default search path (/)
+  plugins_loading: {
+    enabled: true,
+    search_dirs: ["/"],
+  },
+
+  /// Open admin space so storage can be inspected and modified at runtime:
+  ///   curl http://localhost:8000/@/router/local/config/plugins/storage_manager
+  adminspace: {
+    permissions: {
+      read: true,
+      write: true,
+    },
+  },
+
+  /// Expose REST API on port 8000 for admin queries
+  plugins: {
+    rest: {
+      http_port: 8000,
+    },
+
+    storage_manager: {
+      /// In-memory volume — built-in, no extra plugin needed.
+      /// Data lives as long as the zenoh-router container is running.
+      volumes: {
+        memory: {},
+      },
+
+      storages: {
+        /// Record every object detection published by the YOLOv8 detector.
+        /// key_expr matches the default --detection-key in object_detector.py
+        detections: {
+          key_expr: "tb/detections",
+          volume: {
+            id: "memory",
+          },
+        },
+      },
+    },
+  },
+}

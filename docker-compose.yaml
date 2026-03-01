@@ -128,12 +128,33 @@ services:
     ports:
       - "9090:9090"
 
-  # Zenoh router for cross-container pub/sub
+  # Zenoh router for cross-container pub/sub.
+  # Loads zenoh/zenoh-storage.json5 which enables the storage-manager plugin
+  # with an in-memory storage for tb/detections (queryable via get() within
+  # the session). REST admin API available at http://localhost:8000.
   zenoh-router:
     image: eclipse/zenoh:latest
     network_mode: host
     ipc: host
-    command: ["--adminspace-permissions", "rw"]
+    volumes:
+      - ./zenoh:/config:ro
+    command: ["--config", "/config/zenoh-storage.json5"]
+
+  # Persistent detection logger — subscribes to tb/detections and appends
+  # timestamped JSONL records to ./data/detections/detections.jsonl.
+  # Run alongside the detector service for dataset generation:
+  #   docker compose up zenoh-router zenoh-bridge detector detection-logger
+  detection-logger:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./detector:/app
+      - ./data/detections:/data/detections
+    working_dir: /app
+    command: python detection_logger.py --connect tcp/localhost:7447 --output /data/detections/detections.jsonl
 
   # Zenoh DDS bridge (exposes ROS 2 DDS topics as Zenoh keys with rt/ prefix)
   zenoh-bridge:
