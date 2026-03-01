@@ -3,3 +3,4 @@ eclipse-zenoh>=1.0.0
 pycdr2>=0.4.0
 opencv-python-headless>=4.8.0
 numpy>=1.24.0
+pytest>=8.0.0

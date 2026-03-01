@@ -44,6 +44,23 @@
             id: "memory",
           },
         },
+
+        /// SLAM pose estimates published by slam_bridge.py (tb/slam/pose).
+        /// Each sample is a JSON object containing a 4x4 pose matrix.
+        slam_pose: {
+          key_expr: "tb/slam/pose",
+          volume: {
+            id: "memory",
+          },
+        },
+
+        /// SLAM tracker status published by slam_bridge.py (tb/slam/status).
+        slam_status: {
+          key_expr: "tb/slam/status",
+          volume: {
+            id: "memory",
+          },
+        },
       },
     },
   },

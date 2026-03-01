@@ -39,9 +39,6 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-import zenoh
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Query and export detection records")
     parser.add_argument(
@@ -115,6 +112,8 @@ def _parse_ts(iso: str) -> float:
 
 def fetch_from_zenoh(args) -> list:
     """Query the in-memory Zenoh storage using get()."""
+    import zenoh
+
     conf = zenoh.Config()
     if args.connect:
         conf.insert_json5("connect/endpoints", json.dumps([args.connect]))
@@ -178,13 +177,25 @@ def output_jsonl(records, outfile):
         outfile.write(json.dumps(r) + "\n")
 
 
+def _get_detections(record: dict) -> list:
+    """Extract the detections list from a record.
+
+    Supports both the new schema (payload field from zenoh_logger.py) and the
+    legacy schema (detections field) for backwards compatibility.
+    """
+    payload = record.get("payload", record.get("detections", []))
+    if isinstance(payload, list):
+        return payload
+    return []
+
+
 def output_csv(records, outfile):
     writer = csv.writer(outfile)
     writer.writerow(["timestamp", "iso", "class", "confidence", "x1", "y1", "x2", "y2"])
     for r in records:
         ts = r.get("ts", "")
         iso = r.get("iso", "")
-        for det in r.get("detections", []):
+        for det in _get_detections(r):
             bbox = det.get("bbox", [None, None, None, None])
             writer.writerow(
                 [
@@ -203,7 +214,7 @@ def output_summary(records, outfile):
     frames_with_detections = 0
 
     for r in records:
-        dets = r.get("detections", [])
+        dets = _get_detections(r)
         if dets:
             frames_with_detections += 1
         for d in dets:

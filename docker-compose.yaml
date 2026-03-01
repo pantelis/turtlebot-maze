@@ -154,7 +154,44 @@ services:
       - ./detector:/app
       - ./data/detections:/data/detections
     working_dir: /app
-    command: python detection_logger.py --connect tcp/localhost:7447 --output /data/detections/detections.jsonl
+    command: >
+      python zenoh_logger.py
+      --key tb/detections
+      --connect tcp/localhost:7447
+      --output /data/detections/detections.jsonl
+
+  # Run detection logging tests inside the container (has eclipse-zenoh + pytest).
+  # Usage: docker compose run --rm test-detection-logging
+  test-detection-logging:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./detector:/app
+      - ./zenoh:/zenoh:ro
+    working_dir: /app
+    command: pytest test_detection_logging.py -v
+
+  # SLAM pose logger — subscribes to tb/slam/pose and tb/slam/status.
+  # Run alongside demo-slam for trajectory dataset generation:
+  #   docker compose up zenoh-router demo-slam slam-logger
+  slam-logger:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./detector:/app
+      - ./data/slam:/data/slam
+    working_dir: /app
+    command: >
+      python zenoh_logger.py
+      --key tb/slam/**
+      --connect tcp/localhost:7447
+      --output /data/slam/slam.jsonl
 
   # Zenoh DDS bridge (exposes ROS 2 DDS topics as Zenoh keys with rt/ prefix)
   zenoh-bridge:
