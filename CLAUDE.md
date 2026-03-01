@@ -53,6 +53,21 @@ docker compose up demo-behavior-py   # Python behavior demo
 docker compose up demo-behavior-cpp  # C++ behavior demo
 ```
 
+## Documentation Standards
+
+All architecture and data-flow diagrams **must use Mermaid** — no ASCII art or image files.
+This applies to README.md and all other markdown in the repo.
+
+- Use `graph LR` / `graph TD` for flows, `sequenceDiagram` for message exchanges
+- Apply `classDef` to **every** node — never leave siblings unstyled
+- Dark-mode-safe fills with `color:#fff`:
+  - Neutral: `fill:#37474f,stroke:#546e7a`
+  - Blue: `fill:#0277bd,stroke:#01579b`
+  - Green: `fill:#2e7d32,stroke:#1b5e20`
+  - Orange: `fill:#e65100,stroke:#bf360c`
+- Use `rgba(r,g,b,0.2–0.4)` for `rect` in sequence diagrams — never opaque light colors
+- Subgraph labels: plain text only, no special characters or newlines
+
 ## Issue Tracking
 
 Use `bd` (beads) for task and issue tracking. See [beads documentation](https://github.com/steveyegge/beads).
