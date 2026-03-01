@@ -389,7 +389,12 @@
 
         <pose>0.069 -0.047 0.107 0 0 0</pose>
 
-        <sensor name="intel_realsense_r200_depth" type="rgbd_camera">
+        <!-- Simulated RealSense D435i (replaces R200).
+             Topic name matches realsense2_camera driver conventions so the
+             same Gz→ROS bridge config works in simulation and on the real robot.
+             Resolution kept at 320x240 for simulation performance; the real
+             D435i is configured at 640x480 via realsense2_camera parameters. -->
+        <sensor name="camera_realsense_d435i" type="rgbd_camera">
           <always_on>1</always_on>
           <update_rate>5</update_rate>
           <pose>0.064 -0.047 0.107 0 0 0</pose>
@@ -412,7 +417,7 @@
               </clip>
             </depth_camera>
           </camera>
-          <topic>intel_realsense_r200_depth</topic>
+          <topic>camera/realsense_d435i</topic>
         </sensor>
       </link>
 

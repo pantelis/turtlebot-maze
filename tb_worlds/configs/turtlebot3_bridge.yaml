@@ -48,29 +48,34 @@
   gz_type_name: "gz.msgs.Twist"
   direction: ROS_TO_GZ
 
-# RealSense RGBD camera bridges
+# RealSense D435i camera bridges
+# Gz sensor topic prefix: camera/realsense_d435i (set in gz_waffle.sdf.xacro)
+# ROS topic names match realsense2_camera driver conventions for real-robot compatibility.
 # Gazebo type="rgbd_camera" publishes: <topic>/image (RGB), <topic>/depth_image, <topic>/points
-- ros_topic_name: "/intel_realsense_r200_depth/image_raw"
-  gz_topic_name: "/intel_realsense_r200_depth/image"
+- ros_topic_name: "/camera/color/image_raw"
+  gz_topic_name: "/camera/realsense_d435i/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/intel_realsense_r200_depth/depth/image_raw"
-  gz_topic_name: "/intel_realsense_r200_depth/depth_image"
+- ros_topic_name: "/camera/depth/image_rect_raw"
+  gz_topic_name: "/camera/realsense_d435i/depth_image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/intel_realsense_r200_depth/points"
-  gz_topic_name: "/intel_realsense_r200_depth/points"
+- ros_topic_name: "/camera/depth/color/points"
+  gz_topic_name: "/camera/realsense_d435i/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
   gz_type_name: "gz.msgs.PointCloudPacked"
   direction: GZ_TO_ROS
 
-# Legacy topic for backward compatibility (Zenoh pipeline uses this)
+# Legacy alias: vision behaviors (vision_behaviors.cpp, vision.py) subscribe to
+# /camera/image_raw.  This bridge entry means no code changes are needed in
+# tb_autonomy for the D435i swap — same alias pattern works in simulation and
+# on the real robot (where a launch-file remap covers the same purpose).
 - ros_topic_name: "/camera/image_raw"
-  gz_topic_name: "/intel_realsense_r200_depth/image"
+  gz_topic_name: "/camera/realsense_d435i/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
