@@ -128,13 +128,26 @@ class SlamBridge:
             sys.stderr.flush()
 
     def _read_poses(self):
-        """Read JSON pose lines from run_slam stdout and publish via Zenoh."""
+        """Read JSON pose lines from run_slam stdout and publish via Zenoh.
+
+        run_slam writes both structured JSON pose records and plain-text log
+        messages to stdout.  Only valid JSON is published; log lines are
+        forwarded to stderr so they appear in docker logs without polluting
+        the Zenoh pose topic.
+        """
         for line in self.slam_proc.stdout:
             if not self.running:
                 break
             line = line.decode().strip()
-            if line:
-                self.pose_pub.put(line.encode())
+            if not line:
+                continue
+            try:
+                json.loads(line)
+            except json.JSONDecodeError:
+                sys.stderr.write(f"[run_slam stdout] {line}\n")
+                sys.stderr.flush()
+                continue
+            self.pose_pub.put(line.encode())
 
     def _image_callback(self, sample):
         """Handle incoming camera image from Zenoh."""
