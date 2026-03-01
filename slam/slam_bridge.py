@@ -3,20 +3,28 @@
 Zenoh-based stella_vslam SLAM bridge.
 
 Subscribes to ROS 2 camera images bridged via zenoh-bridge-ros2dds,
-streams raw BGR frames to the stella_vslam run_slam driver via stdin
+streams raw frames to the stella_vslam run_slam driver via stdin
 (no files — eliminates the PNG race condition), and publishes tracking
 status and pose estimates back over Zenoh.
 
-Frame wire format sent on run_slam's stdin (all uint32, little-endian):
-  [4 bytes width][4 bytes height][4 bytes channels]
-  [width * height * channels bytes of BGR pixel data]
+Two modes (--mode):
+
+  monocular  Subscribe to colour only.  Wire format per frame:
+               [uint32 width][uint32 height][uint32 channels]
+               [width * height * channels bytes BGR, uint8]
+
+  rgbd       Subscribe to colour + depth.  Wire format per frame pair:
+               Colour: [uint32 w][uint32 h][uint32 ch=3][BGR bytes, uint8]
+               Depth:  [uint32 w][uint32 h][uint32 ch=1][float32 metres]
+             Depth is normalised to float32 metres in this bridge before
+             sending, so run_slam.cc always receives float32 metres and
+             the YAML depthmap_factor should be 1.0.
 
 Pattern matches detector/object_detector.py.
 """
 
 import argparse
 import json
-import os
 import signal
 import struct
 import subprocess
@@ -65,7 +73,11 @@ class SlamBridge:
         self.min_interval = 1.0 / args.max_fps
         self.running = True
 
-        # Lock to serialise writes to run_slam's stdin from the Zenoh callback thread
+        # Latest depth frame for RGBD pairing: (timestamp, np.ndarray float32 metres)
+        self._latest_depth = None
+        self._depth_lock = threading.Lock()
+
+        # Serialise writes to run_slam's stdin from callback threads
         self._stdin_lock = threading.Lock()
 
         # Open Zenoh session
@@ -88,38 +100,43 @@ class SlamBridge:
         self._stderr_thread = threading.Thread(target=self._forward_stderr, daemon=True)
         self._stderr_thread.start()
 
-        # Subscribe to camera images
+        # Subscribe to colour images
         self.image_sub = self.session.declare_subscriber(
             args.image_key, self._image_callback
         )
 
+        # Subscribe to depth images in RGBD mode
+        self.depth_sub = None
+        if args.mode == "rgbd":
+            self.depth_sub = self.session.declare_subscriber(
+                args.depth_key, self._depth_callback
+            )
+
         print("SLAM bridge running.")
+        print(f"  Mode:       {args.mode}")
         print(f"  Image key:  {args.image_key}")
+        if args.mode == "rgbd":
+            print(f"  Depth key:  {args.depth_key}")
         print(f"  Pose key:   {args.pose_key}")
         print(f"  Status key: {args.status_key}")
         print(f"  Config:     {args.config}")
 
     def _start_slam(self):
-        """Start run_slam C++ driver with stdin=PIPE (no -d frame-dir flag)."""
+        """Start run_slam C++ driver with stdin=PIPE."""
         cmd = [
             "run_slam",
-            "-v",
-            self.args.vocab,
-            "-c",
-            self.args.config,
-            "--map-db-out",
-            "/tmp/slam_map.msg",
+            "-v", self.args.vocab,
+            "-c", self.args.config,
+            "--mode", self.args.mode,
+            "--map-db-out", "/tmp/slam_map.msg",
         ]
-
         print(f"Starting run_slam: {' '.join(cmd)}")
-
-        proc = subprocess.Popen(
+        return subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        return proc
 
     def _forward_stderr(self):
         """Forward run_slam stderr to our stderr so it appears in docker logs."""
@@ -149,8 +166,49 @@ class SlamBridge:
                 continue
             self.pose_pub.put(line.encode())
 
+    # ------------------------------------------------------------------
+    # Depth handling (RGBD mode only)
+    # ------------------------------------------------------------------
+
+    def _decode_depth_to_float32_metres(self, img_msg) -> np.ndarray | None:
+        """Decode a sensor_msgs/Image depth frame to float32 metres.
+
+        Supports:
+          32FC1  — Gazebo rgbd_camera depth (already float32 metres)
+          16UC1 / mono16 — RealSense D435i depth (uint16 millimetres)
+        """
+        raw = bytes(img_msg.data)
+        enc = img_msg.encoding
+        h, w = img_msg.height, img_msg.width
+
+        if enc == "32FC1":
+            return np.frombuffer(raw, dtype=np.float32).reshape(h, w).copy()
+
+        if enc in ("16UC1", "mono16"):
+            depth_mm = np.frombuffer(raw, dtype=np.uint16).reshape(h, w)
+            return (depth_mm.astype(np.float32) / 1000.0)
+
+        print(f"Unsupported depth encoding: {enc}")
+        return None
+
+    def _depth_callback(self, sample):
+        """Cache latest depth frame for RGBD frame pairing."""
+        try:
+            img_msg = Image.deserialize(bytes(sample.payload))
+        except Exception as e:
+            print(f"Depth CDR deserialize error: {e}")
+            return
+        depth = self._decode_depth_to_float32_metres(img_msg)
+        if depth is not None:
+            with self._depth_lock:
+                self._latest_depth = (time.time(), depth)
+
+    # ------------------------------------------------------------------
+    # Colour image handling
+    # ------------------------------------------------------------------
+
     def _image_callback(self, sample):
-        """Handle incoming camera image from Zenoh."""
+        """Handle incoming colour image from Zenoh."""
         if not self.running:
             return
 
@@ -167,7 +225,7 @@ class SlamBridge:
             print(f"CDR deserialize error: {e}")
             return
 
-        # Convert to BGR numpy array
+        # Convert to BGR uint8
         if img_msg.encoding in ("rgb8", "bgr8"):
             frame = np.frombuffer(bytes(img_msg.data), dtype=np.uint8).reshape(
                 img_msg.height, img_msg.width, 3
@@ -175,20 +233,43 @@ class SlamBridge:
             if img_msg.encoding == "rgb8":
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         else:
-            print(f"Unsupported encoding: {img_msg.encoding}")
+            print(f"Unsupported colour encoding: {img_msg.encoding}")
             return
 
-        # Send frame to run_slam via stdin pipe — no file I/O, no race condition.
-        # Wire format: [uint32 width][uint32 height][uint32 channels][raw BGR bytes]
         h, w, c = frame.shape
-        header = struct.pack("<III", w, h, c)
-        with self._stdin_lock:
-            try:
-                self.slam_proc.stdin.write(header + frame.tobytes())
-                self.slam_proc.stdin.flush()
-            except BrokenPipeError:
-                self.running = False
-                return
+        colour_bytes = struct.pack("<III", w, h, c) + frame.tobytes()
+
+        if self.args.mode == "rgbd":
+            with self._depth_lock:
+                depth_snapshot = self._latest_depth
+
+            if depth_snapshot is None:
+                return  # depth not yet received — skip frame
+
+            depth_ts, depth = depth_snapshot
+            if abs(now - depth_ts) > 0.5:
+                return  # depth too stale (>500 ms)
+
+            dh, dw = depth.shape
+            depth_bytes = struct.pack("<III", dw, dh, 1) + depth.tobytes()
+
+            # Send colour + depth atomically under the stdin lock
+            with self._stdin_lock:
+                try:
+                    self.slam_proc.stdin.write(colour_bytes + depth_bytes)
+                    self.slam_proc.stdin.flush()
+                except BrokenPipeError:
+                    self.running = False
+                    return
+        else:
+            # Monocular: send colour only
+            with self._stdin_lock:
+                try:
+                    self.slam_proc.stdin.write(colour_bytes)
+                    self.slam_proc.stdin.flush()
+                except BrokenPipeError:
+                    self.running = False
+                    return
 
         self.frame_count += 1
 
@@ -207,7 +288,6 @@ class SlamBridge:
         """Main loop."""
         try:
             while self.running:
-                # Check if run_slam exited unexpectedly
                 if self.slam_proc.poll() is not None:
                     print(
                         f"run_slam exited with code {self.slam_proc.returncode}",
@@ -225,7 +305,6 @@ class SlamBridge:
         self.running = False
         print("Shutting down SLAM bridge...")
 
-        # Close stdin to signal run_slam's read loop to exit
         if self.slam_proc and self.slam_proc.stdin:
             try:
                 self.slam_proc.stdin.close()
@@ -240,6 +319,8 @@ class SlamBridge:
                 self.slam_proc.kill()
 
         self.image_sub.undeclare()
+        if self.depth_sub is not None:
+            self.depth_sub.undeclare()
         self.pose_pub.undeclare()
         self.status_pub.undeclare()
         self.session.close()
@@ -250,54 +331,43 @@ class SlamBridge:
 def main():
     parser = argparse.ArgumentParser(description="Zenoh stella_vslam SLAM Bridge")
     parser.add_argument(
-        "-e",
-        "--connect",
-        type=str,
-        default="",
+        "-e", "--connect", type=str, default="",
         help="Zenoh endpoint to connect to (empty = multicast)",
     )
     parser.add_argument(
-        "--image-key",
-        type=str,
-        default="rt/intel_realsense_r200_depth/image",
-        help="Zenoh key for camera images",
+        "--mode", choices=["monocular", "rgbd"], default="rgbd",
+        help="SLAM mode: monocular (colour only) or rgbd (colour + depth)",
     )
     parser.add_argument(
-        "--depth-key",
-        type=str,
-        default="rt/intel_realsense_r200_depth/depth_image",
-        help="Zenoh key for depth images (reserved for future RGBD mode)",
+        "--image-key", type=str,
+        default="camera/color/image_raw",
+        help="Zenoh key for colour images (zenoh-bridge-ros2dds strips the rt/ DDS prefix)",
     )
     parser.add_argument(
-        "--pose-key",
-        type=str,
-        default="tb/slam/pose",
+        "--depth-key", type=str,
+        default="camera/depth/image_rect_raw",
+        help="Zenoh key for depth images (RGBD mode only)",
+    )
+    parser.add_argument(
+        "--pose-key", type=str, default="tb/slam/pose",
         help="Zenoh key to publish pose estimates",
     )
     parser.add_argument(
-        "--status-key",
-        type=str,
-        default="tb/slam/status",
+        "--status-key", type=str, default="tb/slam/status",
         help="Zenoh key to publish tracking status",
     )
     parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
+        "-c", "--config", type=str,
         default="/slam/config/turtlebot_realsense.yaml",
         help="stella_vslam camera config YAML",
     )
     parser.add_argument(
-        "-v",
-        "--vocab",
-        type=str,
+        "-v", "--vocab", type=str,
         default="/slam/vocab/orb_vocab.fbow",
         help="Path to ORB vocabulary file",
     )
     parser.add_argument(
-        "--max-fps",
-        type=float,
-        default=5.0,
+        "--max-fps", type=float, default=5.0,
         help="Maximum frame processing rate in Hz",
     )
     args = parser.parse_args()

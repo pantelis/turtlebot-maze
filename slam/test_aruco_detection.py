@@ -50,7 +50,7 @@ def main():
     parser.add_argument(
         "--image-key",
         type=str,
-        default="intel_realsense_r200_depth/image_raw",
+        default="camera/color/image_raw",
         help="Zenoh key for camera images",
     )
     parser.add_argument(
