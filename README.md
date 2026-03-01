@@ -68,6 +68,9 @@ graph LR
 | `rosbridge` | extends `overlay` | rosbridge WebSocket server on port 9090 for ros-mcp-server |
 | `detector` | `Dockerfile.torch.gpu` | PyTorch YOLOv8 object detector (zero ROS dependencies) |
 | `demo-slam` | `Dockerfile.slam` | stella_vslam Visual SLAM with Zenoh transport (zero ROS dependencies) |
+| `detection-logger` | `Dockerfile.torch.gpu` | Subscribes to `tb/detections`, appends JSONL to `data/detections/` |
+| `slam-logger` | `Dockerfile.torch.gpu` | Subscribes to `tb/slam/**`, appends JSONL to `data/slam/` |
+| `test-detection-logging` | `Dockerfile.torch.gpu` | Runs the full pytest suite for the logging pipeline |
 
 ### Vision Pipeline
 
@@ -105,8 +108,16 @@ turtlebot-maze/
 │   └── include/              #   C++ headers
 ├── tb_worlds/                # Gazebo worlds, maps, Nav2 config
 ├── detector/                 # Standalone PyTorch detector (no ROS)
-│   ├── object_detector.py    #   Zenoh sub → YOLOv8 → Zenoh pub
-│   └── requirements.txt      #   ultralytics, eclipse-zenoh, pycdr2
+│   ├── object_detector.py         #   Zenoh sub → YOLOv8 → Zenoh pub
+│   ├── zenoh_logger.py            #   Generic Zenoh → JSONL logger (any key)
+│   ├── query_detections.py        #   Query/export JSONL or live Zenoh storage
+│   ├── test_detection_logging.py  #   pytest suite (26 tests, detection + SLAM)
+│   └── requirements.txt           #   ultralytics, eclipse-zenoh, pycdr2, pytest
+├── zenoh/
+│   └── zenoh-storage.json5   # Zenoh router config: storage-manager plugin
+├── data/
+│   ├── detections/           # Host-mounted detection JSONL output
+│   └── slam/                 # Host-mounted SLAM JSONL output
 ├── docker/                   # Dockerfiles + entrypoint
 │   ├── Dockerfile.gpu        #   Multi-stage ROS 2 build (base/overlay/dev)
 │   └── Dockerfile.torch.gpu  #   PyTorch container (CUDA + Ultralytics)
@@ -445,6 +456,202 @@ Gazebo Camera → DDS → zenoh-bridge → Zenoh → slam_bridge.py → stella_v
 ```
 
 Pose estimates are published back via Zenoh on key `tb/slam/pose`.
+
+---
+
+## Data Recording
+
+All robot data streams — object detections and SLAM poses — can be recorded to disk for dataset generation, offline analysis, and Foxglove playback. Two complementary mechanisms are provided:
+
+| Mechanism | Scope | How to query |
+|-----------|-------|-------------|
+| **Zenoh in-memory storage** | Within the running session | `query_detections.py --source zenoh` or REST API |
+| **JSONL file on host** | Persistent across restarts | `query_detections.py --source jsonl` |
+
+### Architecture
+
+```
+object_detector.py  ──── tb/detections ──┐
+slam_bridge.py      ──── tb/slam/**    ──┤──► zenoh-router (in-memory storage)
+                                          │         ↑ queryable via get()
+zenoh_logger.py  ◄── subscribes ──────────┘
+       │
+       └──► data/detections/detections.jsonl   (persistent JSONL on host)
+            data/slam/slam.jsonl
+```
+
+The `zenoh-router` config (`zenoh/zenoh-storage.json5`) loads the `storage_manager` plugin with three in-memory storages:
+
+| Storage name | Key expression | Source |
+|---|---|---|
+| `detections` | `tb/detections` | `object_detector.py` |
+| `slam_pose` | `tb/slam/pose` | `slam_bridge.py` |
+| `slam_status` | `tb/slam/status` | `slam_bridge.py` |
+
+### Record Object Detections
+
+Start the detection stack with the logger:
+
+```bash
+# Terminal 1: Enhanced world
+docker compose up demo-world-enhanced
+
+# Terminal 2: Zenoh transport + detector + logger (logger writes data/detections/detections.jsonl)
+docker compose up zenoh-router zenoh-bridge detector detection-logger
+```
+
+Each line of `data/detections/detections.jsonl` is a self-contained record:
+
+```json
+{
+  "ts": 1772326949.726,
+  "iso": "2026-03-01T01:02:29.726Z",
+  "key": "tb/detections",
+  "payload": [
+    {"class": "bed", "confidence": 0.55, "bbox": [0.8, 179.0, 318.5, 239.7]}
+  ]
+}
+```
+
+Empty frames (no detections) are also recorded so the frame rate is preserved for time-aligned datasets.
+
+### Record SLAM Poses
+
+Start the SLAM stack with the logger:
+
+```bash
+# Terminal 1: Enhanced world
+docker compose up demo-world-enhanced
+
+# Terminal 2: Zenoh transport
+docker compose up zenoh-router zenoh-bridge
+
+# Terminal 3: SLAM + logger (logger writes data/slam/slam.jsonl)
+docker compose up demo-slam slam-logger
+```
+
+The logger subscribes to `tb/slam/**` (wildcard), capturing both `tb/slam/pose` and `tb/slam/status` in a single file. Each record's `key` field identifies which sub-stream it came from:
+
+```json
+{"ts": 1772327151.875, "iso": "2026-03-01T01:05:51.875Z",
+ "key": "tb/slam/status", "payload": {"status": "tracking", "frame_count": 124}}
+```
+
+### Query and Export Recorded Data
+
+`detector/query_detections.py` reads from either the live Zenoh storage or a JSONL file.
+
+```bash
+# Quick summary of what was detected
+python3 detector/query_detections.py \
+  --source jsonl \
+  --input data/detections/detections.jsonl \
+  --format summary
+
+# Export to CSV for analysis (one row per detection bounding box)
+python3 detector/query_detections.py \
+  --source jsonl \
+  --input data/detections/detections.jsonl \
+  --format csv \
+  --output detections.csv
+
+# Filter by time range
+python3 detector/query_detections.py \
+  --source jsonl \
+  --input data/detections/detections.jsonl \
+  --after 2026-03-01T10:00:00 \
+  --before 2026-03-01T10:05:00 \
+  --format json
+
+# Query live in-memory Zenoh storage (router must be running)
+python3 detector/query_detections.py \
+  --source zenoh \
+  --key tb/detections \
+  --connect tcp/localhost:7447 \
+  --format summary
+```
+
+Available output formats:
+
+| Format | Description |
+|--------|-------------|
+| `json` | Pretty-printed JSON array of all records |
+| `jsonl` | One JSON record per line |
+| `csv` | `timestamp, iso, class, confidence, x1, y1, x2, y2` — one row per detection |
+| `summary` | Human-readable class frequency table |
+
+### Zenoh Router REST Admin API
+
+While the `zenoh-router` is running, the storage contents can be inspected via HTTP:
+
+```bash
+# List all configured storages
+curl http://localhost:8000/@/router/local/config/plugins/storage_manager/storages
+
+# Inspect detection storage config
+curl http://localhost:8000/@/router/local/config/plugins/storage_manager/storages/detections
+
+# Query stored detections directly (returns latest stored value)
+curl http://localhost:8000/tb/detections
+```
+
+### Data Directories
+
+Recorded files land on the host (volume-mounted into the containers):
+
+```
+data/
+├── detections/
+│   ├── detections.jsonl   ← written by detection-logger
+│   └── .gitignore         ← excludes *.jsonl, *.csv, *.json from git
+└── slam/
+    ├── slam.jsonl         ← written by slam-logger (pose + status)
+    └── .gitignore
+```
+
+> **Note:** Data files are git-ignored. Back them up or export them before wiping the directory.
+
+### Logger CLI
+
+`detector/zenoh_logger.py` is a generic Zenoh → JSONL logger that works for any key expression:
+
+```bash
+# Record object detections
+python3 detector/zenoh_logger.py \
+  --key tb/detections \
+  --output data/detections/run1.jsonl \
+  --connect tcp/localhost:7447
+
+# Record SLAM poses only
+python3 detector/zenoh_logger.py \
+  --key tb/slam/pose \
+  --output data/slam/poses_run1.jsonl \
+  --connect tcp/localhost:7447
+
+# Record any key with wildcard
+python3 detector/zenoh_logger.py \
+  --key tb/** \
+  --output data/all.jsonl
+```
+
+### Testing
+
+The logger and query pipeline have a pytest suite that covers both the detection and SLAM use cases.
+
+Run the Zenoh end-to-end tests inside the container (requires `eclipse-zenoh`):
+
+```bash
+docker compose run --rm test-detection-logging
+```
+
+Run the query and config tests on the host (no Zenoh needed):
+
+```bash
+pytest detector/test_detection_logging.py::TestQueryDetections \
+       detector/test_detection_logging.py::TestZenohStorageConfig -v
+```
+
+Expected output: **26 passed** (15 Zenoh end-to-end + 11 host-runnable).
 
 ---
 
