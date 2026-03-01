@@ -1,9 +1,15 @@
-# stella_vslam monocular camera config for TurtleBot3 Waffle simulated camera
+# stella_vslam RGBD camera config for TurtleBot3 Waffle simulated D435i camera
 # Intrinsics derived from gz_waffle.sdf.xacro (horizontal_fov=1.047, 320x240)
+#
+# Used with: slam_bridge.py --mode rgbd --config turtlebot_realsense.yaml
+#
+# Depth arrives as float32 metres from Gazebo (32FC1 encoding via Gz bridge).
+# slam_bridge.py normalises all depth to float32 metres before sending to
+# run_slam, so depthmap_factor is 1.0 for both simulation and real D435i.
 
 Camera:
-  name: "TurtleBot3 Waffle simulated camera (monocular)"
-  setup: "monocular"
+  name: "TurtleBot3 Waffle simulated D435i (RGBD)"
+  setup: "RGBD"
   model: "perspective"
 
   # fx = fy = width / (2 * tan(hfov/2)) = 320 / (2 * tan(0.5235)) = 277.13
@@ -23,11 +29,18 @@ Camera:
   cols: 320
   rows: 240
 
-  # slam_bridge.py always delivers BGR frames (cv2 native ordering)
+  # slam_bridge.py delivers BGR frames (cv2 native ordering)
   color_order: "BGR"
 
+  # depth_threshold: maximum depth in metres to use for mapping
+  # Matches Gazebo depth camera far clip (gz_waffle.sdf.xacro: <far>5.0</far>)
+  depth_threshold: 5.0
+
+  # slam_bridge.py normalises depth to float32 metres; no additional scaling needed
+  depthmap_factor: 1.0
+
 Preprocessing:
-  # min_size must be <= min(cols, rows) = 240 to allow feature extraction
+  # min_size must be <= min(cols, rows) = 240
   min_size: 200
 
 Feature:

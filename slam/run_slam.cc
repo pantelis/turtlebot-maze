@@ -1,16 +1,25 @@
 /**
  * Minimal stella_vslam driver for stdin-based frame input.
  *
- * Reads frames from stdin as length-prefixed raw BGR bytes (no file I/O),
- * feeds them to stella_vslam monocular pipeline, and writes pose estimates
- * to stdout as JSON lines.
+ * Reads frames from stdin as length-prefixed raw bytes (no file I/O),
+ * feeds them to stella_vslam, and writes pose estimates to stdout as
+ * JSON lines.
  *
- * Frame wire format (all uint32, little-endian):
+ * Monocular wire format (colour only):
  *   [4 bytes width][4 bytes height][4 bytes channels]
- *   [width * height * channels bytes of BGR pixel data]
+ *   [width * height * channels bytes of BGR pixel data, uint8]
+ *
+ * RGBD wire format (colour frame followed immediately by depth frame):
+ *   Colour: [4 bytes width][4 bytes height][4 bytes channels=3]
+ *           [width * height * 3 bytes of BGR pixel data, uint8]
+ *   Depth:  [4 bytes width][4 bytes height][4 bytes channels=1]
+ *           [width * height * 4 bytes of depth data, float32 metres]
+ *
+ * slam_bridge.py normalises depth to float32 metres before sending,
+ * so depthmap_factor in the YAML config should be 1.0.
  *
  * Usage:
- *   run_slam -v vocab.fbow -c config.yaml [--map-db-out path]
+ *   run_slam -v vocab.fbow -c config.yaml [--mode monocular|rgbd] [--map-db-out path]
  */
 
 #include <chrono>
@@ -24,9 +33,33 @@
 #include <stella_vslam/config.h>
 #include <stella_vslam/system.h>
 
+static bool read_u8_frame(cv::Mat& out) {
+    uint32_t w = 0, h = 0, c = 0;
+    if (!std::cin.read(reinterpret_cast<char*>(&w), 4)) return false;
+    if (!std::cin.read(reinterpret_cast<char*>(&h), 4)) return false;
+    if (!std::cin.read(reinterpret_cast<char*>(&c), 4)) return false;
+    if (!w || !h || !c) return false;
+    out = cv::Mat(static_cast<int>(h), static_cast<int>(w),
+                  CV_8UC(static_cast<int>(c)));
+    const auto nbytes = static_cast<std::streamsize>(w) * h * c;
+    return bool(std::cin.read(reinterpret_cast<char*>(out.data), nbytes));
+}
+
+static bool read_f32_frame(cv::Mat& out) {
+    uint32_t w = 0, h = 0, c = 0;
+    if (!std::cin.read(reinterpret_cast<char*>(&w), 4)) return false;
+    if (!std::cin.read(reinterpret_cast<char*>(&h), 4)) return false;
+    if (!std::cin.read(reinterpret_cast<char*>(&c), 4)) return false;
+    if (!w || !h) return false;
+    out = cv::Mat(static_cast<int>(h), static_cast<int>(w), CV_32FC1);
+    const auto nbytes = static_cast<std::streamsize>(w) * h * 4;
+    return bool(std::cin.read(reinterpret_cast<char*>(out.data), nbytes));
+}
+
 int main(int argc, char* argv[]) {
     std::string vocab_path, config_path;
     std::string map_db_out = "/tmp/slam_map.msg";
+    std::string mode = "monocular";
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -36,49 +69,52 @@ int main(int argc, char* argv[]) {
             config_path = argv[++i];
         } else if (arg == "--map-db-out" && i + 1 < argc) {
             map_db_out = argv[++i];
+        } else if (arg == "--mode" && i + 1 < argc) {
+            mode = argv[++i];
         }
     }
 
     if (vocab_path.empty() || config_path.empty()) {
-        std::cerr << "Usage: run_slam -v <vocab> -c <config> [--map-db-out path]"
+        std::cerr << "Usage: run_slam -v <vocab> -c <config>"
+                     " [--mode monocular|rgbd] [--map-db-out path]"
                   << std::endl;
         return 1;
     }
 
+    if (mode != "monocular" && mode != "rgbd") {
+        std::cerr << "Unknown mode: " << mode
+                  << " (expected monocular or rgbd)" << std::endl;
+        return 1;
+    }
+
     // Load config and create SLAM system
-    auto cfg = std::make_shared<stella_vslam::config>(config_path);
+    auto cfg  = std::make_shared<stella_vslam::config>(config_path);
     auto slam = std::make_shared<stella_vslam::system>(cfg, vocab_path);
     slam->startup();
 
-    std::cerr << "stella_vslam started. Reading frames from stdin." << std::endl;
+    std::cerr << "stella_vslam started. mode=" << mode
+              << ". Reading frames from stdin." << std::endl;
 
     unsigned int frame_id = 0;
     const auto start_time = std::chrono::steady_clock::now();
 
     while (std::cin.good()) {
-        // Read frame header: [width uint32][height uint32][channels uint32]
-        uint32_t width = 0, height = 0, channels = 0;
+        cv::Mat color;
+        if (!read_u8_frame(color)) break;
 
-        if (!std::cin.read(reinterpret_cast<char*>(&width), 4)) break;
-        if (!std::cin.read(reinterpret_cast<char*>(&height), 4)) break;
-        if (!std::cin.read(reinterpret_cast<char*>(&channels), 4)) break;
+        const auto now = std::chrono::steady_clock::now();
+        const double timestamp =
+            std::chrono::duration<double>(now - start_time).count();
 
-        if (width == 0 || height == 0 || channels == 0) break;
+        std::shared_ptr<stella_vslam::Mat44_t> pose;
 
-        // Read raw pixel data directly into cv::Mat (no PNG decode, no file I/O)
-        const auto nbytes =
-            static_cast<std::streamsize>(width) * height * channels;
-        cv::Mat img(static_cast<int>(height), static_cast<int>(width),
-                    CV_8UC(static_cast<int>(channels)));
-
-        if (!std::cin.read(reinterpret_cast<char*>(img.data), nbytes)) break;
-
-        // Timestamp relative to startup
-        auto now = std::chrono::steady_clock::now();
-        double timestamp = std::chrono::duration<double>(now - start_time).count();
-
-        // Feed to SLAM (monocular)
-        auto pose = slam->feed_monocular_frame(img, timestamp);
+        if (mode == "rgbd") {
+            cv::Mat depth;
+            if (!read_f32_frame(depth)) break;
+            pose = slam->feed_RGBD_frame(color, depth, timestamp);
+        } else {
+            pose = slam->feed_monocular_frame(color, timestamp);
+        }
 
         // Output pose as JSON line on stdout
         if (pose) {
