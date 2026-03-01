@@ -2,13 +2,15 @@
 set -euo pipefail
 
 # Ensure dolt sql-server is running for beads_turtlebot-maze (port 3308)
-DOLT_DB_DIR="$CLAUDE_PROJECT_DIR/.beads/dolt/beads_turtlebot-maze"
+DOLT_DATA_DIR="$CLAUDE_PROJECT_DIR/.beads/dolt"
+DOLT_DB_DIR="$DOLT_DATA_DIR/beads_turtlebot-maze"
 DOLT_PORT=3308
 DOLT_LOG="/tmp/dolt-turtlebot-maze.log"
 
 if command -v dolt &>/dev/null && [ -d "$DOLT_DB_DIR" ]; then
   if ! ss -tlnp 2>/dev/null | grep -q ":${DOLT_PORT} "; then
     nohup dolt sql-server \
+      --data-dir="${DOLT_DATA_DIR}" \
       --port="${DOLT_PORT}" \
       --host=127.0.0.1 \
       --loglevel=warning \
