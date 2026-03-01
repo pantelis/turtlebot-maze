@@ -68,6 +68,39 @@ This applies to README.md and all other markdown in the repo.
 - Use `rgba(r,g,b,0.2–0.4)` for `rect` in sequence diagrams — never opaque light colors
 - Subgraph labels: plain text only, no special characters or newlines
 
+## Git Workflow
+
+The `main` branch is protected — direct pushes are blocked for everyone including admins.
+All changes must go through a pull request.
+
+```bash
+# 1. Create a feature branch
+git checkout -b feat/my-change
+
+# 2. Commit work normally
+git add <files>
+git commit -m "feat: description"
+
+# 3. Push and open a PR
+git push -u origin feat/my-change
+gh pr create --title "Short title" --body "$(cat <<'EOF'
+## Summary
+- bullet points
+
+## Test plan
+- [ ] tests pass
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+
+# 4. Enable auto-merge (merges immediately — no reviewer required)
+gh pr merge --auto --squash
+```
+
+Auto-merge is enabled at the repo level: once any required CI checks pass the PR merges automatically.
+Use `--squash` (default), `--merge`, or `--rebase` depending on the change.
+
 ## Issue Tracking
 
 Use `bd` (beads) for task and issue tracking. See [beads documentation](https://github.com/steveyegge/beads).
