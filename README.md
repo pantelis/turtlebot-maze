@@ -20,8 +20,8 @@ The key architectural principle is that heavyweight ML inference (YOLOv8, stella
 ```mermaid
 graph LR
     subgraph ROS 2 Container
-        GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image"| CAM["/camera/image_raw"]
-        GAZ -->|"sensor_msgs/Image"| DEPTH["/realsense/image_raw"]
+        GAZ["Gazebo Simulation"] -->|"sensor_msgs/Image"| CAM["/camera/color/image_raw"]
+        GAZ -->|"sensor_msgs/Image"| DEPTH["/camera/depth/image_rect_raw"]
         NAV["Nav2 Stack"] -->|navigation| TB["TurtleBot"]
         BT["Behavior Tree"] -->|goals| NAV
         BT -->|"vision query"| VIS["LookForObject (zenoh_detection_sub)"]
@@ -42,12 +42,12 @@ graph LR
         RS -->|"JSON pose"| SB
     end
 
-    CAM -->|"DDS: camera/image_raw"| ZB
-    DEPTH -->|"DDS: realsense/image_raw"| ZB
-    ZR -->|"Zenoh: camera/image_raw"| DET
+    CAM -->|"DDS: camera/color/image_raw"| ZB
+    DEPTH -->|"DDS: camera/depth/image_rect_raw"| ZB
+    ZR -->|"Zenoh: camera/color/image_raw"| DET
     DET -->|"Zenoh: tb/detections"| ZR
     ZR -->|"Zenoh: tb/detections"| VIS
-    ZR -->|"Zenoh: realsense/image_raw"| SB
+    ZR -->|"Zenoh: camera/color/image_raw"| SB
     SB -->|"Zenoh: tb/slam/pose"| ZR
 ```
 
@@ -694,7 +694,7 @@ sequenceDiagram
     participant BT as Behavior Tree
 
     G->>B: sensor_msgs/Image (DDS)
-    B->>D: camera/image_raw (CDR via Zenoh)
+    B->>D: camera/color/image_raw (CDR via Zenoh)
     D->>D: pycdr2 deserialize, YOLOv8 inference
     D->>B: tb/detections (JSON via Zenoh)
     B->>S: Subscribe tb/detections
@@ -706,7 +706,8 @@ sequenceDiagram
 
 | Key | Direction | Format | Description |
 |---|---|---|---|
-| `camera/image_raw` | ROS → Detector | CDR (`sensor_msgs/Image`) | Camera frames (auto-bridged) |
+| `camera/color/image_raw` | ROS → Detector/SLAM | CDR (`sensor_msgs/Image`) | D435i colour frames (auto-bridged) |
+| `camera/depth/image_rect_raw` | ROS → SLAM | CDR (`sensor_msgs/Image`) | D435i depth frames (RGBD mode) |
 | `tb/detections` | Detector → ROS | JSON array | Detection results |
 
 ### Detection JSON Format
@@ -725,7 +726,7 @@ python object_detector.py \
   --model yolov8n.pt \
   --confidence 0.5 \
   --max-fps 10 \
-  --image-key "camera/image_raw" \
+  --image-key "camera/color/image_raw" \
   --detection-key "tb/detections"
 ```
 
@@ -764,7 +765,7 @@ A ready-made 4-panel layout is included at `foxglove/turtlebot_maze.json`:
 | Panel | Topics used | What you see |
 |-------|------------|--------------|
 | **3D view** (left 62%) | `/map`, `/scan`, `/amcl_pose`, `/particle_cloud`, `/plan`, `/local_plan`, `/tf` | Occupancy grid, laser scan (red), AMCL particle cloud (blue), global path (green), local path (orange), TF axes — camera follows `base_footprint` top-down |
-| **Camera** (top right) | `/camera/image_raw` | Live robot camera feed |
+| **Camera** (top right) | `/camera/color/image_raw` | Live robot camera feed |
 | **Velocity plot** (mid right) | `/cmd_vel` | `linear.x` and `angular.z` over a 15 s rolling window |
 | **Pose inspector** (bottom right) | `/amcl_pose` | Raw x, y, quaternion values |
 

@@ -75,8 +75,8 @@ def main():
     parser.add_argument(
         "--image-key",
         type=str,
-        default="camera/image_raw",
-        help="Zenoh key for camera images (bridged from ROS 2)",
+        default="camera/color/image_raw",
+        help="Zenoh key for camera images (D435i: camera/color/image_raw via zenoh-bridge-ros2dds)",
     )
     parser.add_argument(
         "--detection-key",

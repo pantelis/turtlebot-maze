@@ -227,7 +227,7 @@ services:
     volumes:
       - ./detector:/app
     working_dir: /app
-    command: python object_detector.py --confidence 0.5 --model yolov8n.pt --connect tcp/localhost:7447
+    command: python object_detector.py --confidence 0.5 --model yolov8n.pt --image-key camera/color/image_raw --connect tcp/localhost:7447
 
   # stella_vslam Visual SLAM (standalone, Zenoh transport)
   demo-slam:
