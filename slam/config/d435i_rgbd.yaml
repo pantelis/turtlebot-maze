@@ -1,0 +1,80 @@
+# stella_vslam RGBD camera config for Intel RealSense D435i (real robot)
+#
+# Used with: slam_bridge.py --mode rgbd --config d435i_rgbd.yaml
+#
+# Intrinsics below are NOMINAL values for the D435i colour stream at 640x480.
+# IMPORTANT: replace with values from your specific unit before deploying.
+# Calibrate with:
+#   ros2 run camera_calibration cameracalibrator --size 8x6 --square 0.025 \
+#       image:=/camera/color/image_raw
+#
+# Depth from realsense2_camera arrives as 16UC1 (uint16, millimetres).
+# slam_bridge.py converts to float32 metres before sending to run_slam,
+# so depthmap_factor is 1.0 here.
+#
+# References:
+#   Hardware:   https://www.intelrealsense.com/depth-camera-d435i/
+#     Colour FOV: 69.4° × 42.5° at 640×480
+#   ROS 2 driver: https://github.com/realsenseai/realsense-ros
+#     Publishes: /camera/color/image_raw (rgb8, 640x480)
+#                /camera/depth/image_rect_raw (16UC1, mm)
+#                /camera/imu (sensor_msgs/Imu)
+
+Camera:
+  name: "Intel RealSense D435i colour (RGBD)"
+  setup: "RGBD"
+  model: "perspective"
+
+  # Nominal intrinsics — REPLACE with calibrated values from your unit.
+  # At 640x480, typical factory values: fx≈617, fy≈617, cx≈321, cy≈240
+  fx: 617.0
+  fy: 617.0
+  cx: 321.0
+  cy: 240.0
+
+  # Typical D435i distortion (replace with calibration output)
+  k1: 0.0
+  k2: 0.0
+  p1: 0.0
+  p2: 0.0
+  k3: 0.0
+
+  fps: 30.0
+  cols: 640
+  rows: 480
+
+  # realsense2_camera publishes colour as rgb8; slam_bridge.py converts to BGR
+  color_order: "BGR"
+
+  # Practical depth range: D435i reliable from ~0.3 m to ~3 m indoors
+  depth_threshold: 3.0
+
+  # slam_bridge.py normalises D435i depth (16UC1 mm) to float32 metres;
+  # no additional scaling needed here
+  depthmap_factor: 1.0
+
+Preprocessing:
+  min_size: 400
+
+Feature:
+  name: "ORB for D435i 640x480"
+  scale_factor: 1.2
+  num_levels: 8
+  ini_fast_threshold: 20
+  min_fast_threshold: 7
+
+Mapping:
+  baseline_dist_thr: 0.1
+  redundant_obs_ratio_thr: 0.9
+
+SocketViewer:
+  keyframe_size: 0.07
+  keyframe_line_width: 1
+  graph_line_width: 1
+  point_size: 2
+  camera_size: 0.08
+  camera_line_width: 3
+  viewpoint_x: 0
+  viewpoint_y: -0.65
+  viewpoint_z: -1.9
+  viewpoint_f: 400
