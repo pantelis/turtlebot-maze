@@ -1,3 +1,12 @@
 .colcon/
 .vscode/
 **/__pycache__/
+
+# Beads/Dolt runtime files
+.beads/dolt-server.log
+.beads/dolt-config.log
+.beads/dolt-server.pid
+.beads/dolt-monitor.pid
+.beads/dolt-server.port
+.beads/dolt-server.lock
+.beads/dolt-server.activity
