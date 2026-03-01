@@ -1,3 +1,5 @@
 # Beads configuration
 # See https://github.com/steveyegge/beads for documentation
 issue-prefix: turtlebot-maze
+
+sync.branch: "beads-sync"
