@@ -1,0 +1,4 @@
+# Ignore recorded detection data (can be large)
+*.jsonl
+*.csv
+*.json
