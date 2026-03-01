@@ -2,6 +2,9 @@
 .vscode/
 **/__pycache__/
 
+# ML model weights
+detector/*.pt
+
 # Beads/Dolt runtime files
 .beads/dolt-server.log
 .beads/dolt-config.log
