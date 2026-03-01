@@ -680,6 +680,49 @@ Beads: turtlebot-maze-m5e"
 
 ---
 
+## Camera Model Assessment: Intel RealSense R200 vs D435i
+
+**Investigated: 2026-03-01. Outcome: R200 is inappropriate for monocular VSLAM on the real robot.**
+
+### Why R200 Fails for VSLAM
+
+The R200's RGB camera uses a **rolling shutter** — each image row is captured at a different instant. During camera motion this causes geometric distortion ("jello effect") that corrupts ORB feature correspondences. This is the primary reason for the rapid tracking loss observed in simulation (`tracking lost within 5 sec after initialization` at frame 434).
+
+| Sensor | Shutter | Resolution | FPS | Suitable for VSLAM |
+|--------|---------|------------|-----|--------------------|
+| R200 RGB (color) | **Rolling** ❌ | 1920×1080 | 30 | No — motion distortion |
+| R200 IR stereo (L/R) | Global ✓ | 480×360 | 60 | Yes — but needs stereo rewrite |
+| D435i RGB | **Global** ✓ | 1920×1080 | 30 | Yes |
+| D435i depth | Global ✓ | 1280×720 | 90 | Yes |
+| D435i IMU | — | — | 400 Hz | Enables visual-inertial |
+
+### Current Config is Simulation-Only
+
+`slam/config/turtlebot_realsense.yaml` was written for the **simulated** TurtleBot3 Waffle camera (320×240, 5 fps, zero distortion). The real R200 at 1920×1080 with lens distortion requires a completely different calibration. There is no official stella_vslam config for the R200; configs exist for D435 and D435i.
+
+### Required Camera Model for Real-Robot VSLAM
+
+A real-robot deployment requires:
+
+1. **Physical calibration** — intrinsics (fx, fy, cx, cy, k1..k3, p1, p2) measured via `camera_calibration` or `kalibr`, not derived from SDF FOV parameters.
+2. **Global shutter** — mandatory for ORB-based SLAM at robot speeds.
+3. **IMU** (optional but recommended) — enables visual-inertial odometry (VINS), which is significantly more robust than pure visual SLAM.
+
+### Migration Path: R200 → D435i
+
+The D435i is the drop-in replacement:
+- Global shutter RGB camera — direct fix for rolling shutter tracking loss
+- Built-in IMU (BMI055) — enables `feed_IMU_frame()` in stella_vslam for VINS
+- First-class stella_vslam support (example configs in upstream repo)
+- ROS 2 `realsense2_camera` driver publishes `camera/color/image_raw` and `camera/depth/image_rect_raw`
+
+**Beads issues tracking the migration:**
+- `turtlebot-maze-2mc` — swap R200 → D435i in SLAM pipeline (Zenoh keys, camera config, run_slam RGBD mode)
+- `turtlebot-maze-3ml` — audit R200 usage in Nav2 and assess D435i impact on navigation
+- `turtlebot-maze-dgm` — validate D435i for YOLOv8 object detection (blocked by 2mc and 3ml)
+
+---
+
 ## Reference Files
 
 | Existing File | Why You Need It |
