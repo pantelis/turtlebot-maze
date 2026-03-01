@@ -480,16 +480,16 @@ graph LR
 
     DET["object_detector.py"]
     SLB["slam_bridge.py"]
-    ZR["zenoh-router\nin-memory storage"]
+    ZR["zenoh-router<br/>in-memory storage"]
     LOG["zenoh_logger.py"]
-    FD["data/detections/\ndetections.jsonl"]
-    FS["data/slam/\nslam.jsonl"]
+    FD["data/detections/<br/>detections.jsonl"]
+    FS["data/slam/<br/>slam.jsonl"]
     QRY["query_detections.py"]
-    REST["REST API\nlocalhost:8000"]
+    REST["REST API<br/>localhost:8000"]
 
     DET -->|"tb/detections"| ZR
-    SLB -->|"tb/slam/pose\ntb/slam/status"| ZR
-    ZR -->|"subscribe tb/detections\nsubscribe tb/slam/**"| LOG
+    SLB -->|"tb/slam/pose tb/slam/status"| ZR
+    ZR -->|"subscribe"| LOG
     LOG --> FD
     LOG --> FS
     FD --> QRY
@@ -811,7 +811,7 @@ Claude: subscribes to /odom → compares velocity over time →
 graph LR
     U["User (natural language)"] --> CC["Claude Code"]
     CC -->|MCP tool calls| MCP["ros-mcp-server"]
-    MCP -->|WebSocket JSON| RB["rosbridge\n(port 9090)"]
+    MCP -->|WebSocket JSON| RB["rosbridge<br/>(port 9090)"]
     RB -->|DDS| NAV["Nav2 Stack"]
     NAV -->|/amcl_pose, /odom| RB
     RB -->|topic data| MCP
