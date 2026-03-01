@@ -90,10 +90,12 @@ services:
       # Remove these mounts once the overlay image is rebuilt with D435i changes.
       - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
       - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
+      - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
     command: >
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=sim_house_enhanced.sdf.xacro
       use_aruco:=True
+      rviz_config_file:=/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz
 
   # Behavior demo using Python and py_trees
   demo-behavior-py:
