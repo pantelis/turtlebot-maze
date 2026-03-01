@@ -470,14 +470,38 @@ All robot data streams — object detections and SLAM poses — can be recorded 
 
 ### Architecture
 
-```
-object_detector.py  ──── tb/detections ──┐
-slam_bridge.py      ──── tb/slam/**    ──┤──► zenoh-router (in-memory storage)
-                                          │         ↑ queryable via get()
-zenoh_logger.py  ◄── subscribes ──────────┘
-       │
-       └──► data/detections/detections.jsonl   (persistent JSONL on host)
-            data/slam/slam.jsonl
+```mermaid
+graph LR
+    classDef producer fill:#0277bd,stroke:#01579b,color:#fff
+    classDef transport fill:#37474f,stroke:#546e7a,color:#fff
+    classDef storage  fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef consumer fill:#e65100,stroke:#bf360c,color:#fff
+    classDef file     fill:#37474f,stroke:#546e7a,color:#fff
+
+    DET["object_detector.py"]
+    SLB["slam_bridge.py"]
+    ZR["zenoh-router\nin-memory storage"]
+    LOG["zenoh_logger.py"]
+    FD["data/detections/\ndetections.jsonl"]
+    FS["data/slam/\nslam.jsonl"]
+    QRY["query_detections.py"]
+    REST["REST API\nlocalhost:8000"]
+
+    DET -->|"tb/detections"| ZR
+    SLB -->|"tb/slam/pose\ntb/slam/status"| ZR
+    ZR -->|"subscribe tb/detections\nsubscribe tb/slam/**"| LOG
+    LOG --> FD
+    LOG --> FS
+    FD --> QRY
+    FS --> QRY
+    ZR -->|"get tb/detections"| QRY
+    ZR --- REST
+
+    class DET,SLB producer
+    class ZR transport
+    class LOG storage
+    class FD,FS file
+    class QRY,REST consumer
 ```
 
 The `zenoh-router` config (`zenoh/zenoh-storage.json5`) loads the `storage_manager` plugin with three in-memory storages:
