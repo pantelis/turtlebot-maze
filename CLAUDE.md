@@ -72,6 +72,14 @@ This applies to README.md and all other markdown in the repo.
 
 Use `bd` (beads) for task and issue tracking. See [beads documentation](https://github.com/steveyegge/beads).
 
+**Before closing any issue**, always write a summary using `bd update <id> --notes "..."` that includes:
+- What was done (key changes made, files modified)
+- Root causes found (for bugs)
+- Lessons learned (gotchas, non-obvious behaviour, useful debugging insights)
+- Verification performed (tests run, output observed)
+
+This makes closed issues a searchable knowledge base for future debugging sessions.
+
 ## Key Configuration
 
 - ROS distro: `jazzy` (set in `.env`)
