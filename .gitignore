@@ -13,3 +13,7 @@ detector/*.pt
 .beads/dolt-server.port
 .beads/dolt-server.lock
 .beads/dolt-server.activity
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
