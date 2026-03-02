@@ -461,7 +461,9 @@ Residential interior with kitchen, living room, bedrooms, and garage. 68 `aws_ro
 
 #### Bookstore World
 
-![Bookstore world in Gazebo Sim](./media/world_bookstore_gazebo.png)
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![Bookstore world in Gazebo Sim](./media/world_bookstore_gazebo.png) | ![Bookstore world Nav2 map in RViz2](./media/world_bookstore_rviz2.png) |
 
 Retail store interior with full-height bookshelves, display tables, a curved checkout counter, and product models. 34 `aws_robomaker_retail_*` models.
 
