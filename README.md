@@ -451,6 +451,28 @@ The house, bookstore, and warehouse worlds are adapted from [AWS RoboMaker](http
 | Bookstore | `aws-robotics/aws-robomaker-bookstore-world` (Harmonic PR #21) | 5 cm/px |
 | Warehouse | `aws-robotics/aws-robomaker-small-warehouse-world` (Jazzy PR #27, no-roof variant) | 2 cm/px |
 
+#### House World
+
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![House world in Gazebo Sim](./media/world_house_gazebo.png) | ![House world Nav2 map in RViz2](./media/world_house_rviz2.png) |
+
+Residential interior with kitchen, living room, bedrooms, and garage. 68 `aws_robomaker_residential_*` models including furniture, appliances, carpets, and portraits.
+
+#### Bookstore World
+
+![Bookstore world in Gazebo Sim](./media/world_bookstore_gazebo.png)
+
+Retail store interior with full-height bookshelves, display tables, a curved checkout counter, and product models. 34 `aws_robomaker_retail_*` models.
+
+#### Warehouse World
+
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![Warehouse world in Gazebo Sim](./media/world_warehouse_gazebo.png) | ![Warehouse world Nav2 map in RViz2](./media/world_warehouse_rviz2.png) |
+
+Industrial open floor with yellow steel racks, palletised boxes, clutter items, and drive lanes. No-roof variant for unobstructed TurtleBot navigation. 14 `aws_robomaker_warehouse_*` models, 2 cm/px map.
+
 ### Launch Parameters
 
 All worlds are launched through `tb_demo_world.launch.py`:
