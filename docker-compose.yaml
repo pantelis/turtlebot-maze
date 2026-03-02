@@ -121,6 +121,18 @@ services:
       world_name:=bookstore_world.sdf.xacro
       map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/bookstore_world_map.yaml
 
+  # Warehouse world — AWS RoboMaker Small Warehouse, no-roof variant (Jazzy-compatible)
+  # Uses the same overlay image as all other worlds; no rebuild needed.
+  # Select this world with:  docker compose up demo-world-warehouse
+  demo-world-warehouse:
+    extends: overlay
+    environment:
+      - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
+    command: >
+      ros2 launch tb_worlds tb_demo_world.launch.py
+      world_name:=warehouse_world.sdf.xacro
+      map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/warehouse_world_map.yaml
+
   # Behavior demo using Python and py_trees
   demo-behavior-py:
     extends: overlay
