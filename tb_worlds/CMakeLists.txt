@@ -18,4 +18,12 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Portrait photos referenced by AWS residential DeskPortrait/Portrait models via
+# relative path ../../../../photos/ from their meshes directories.
+# Installs to share/photos/ (one level above share/${PROJECT_NAME}/).
+install(DIRECTORY
+  photos
+  DESTINATION share
+)
+
 ament_package()
