@@ -1,6 +1,7 @@
 {
   "database": "dolt",
   "backend": "dolt",
-  "dolt_server_port": 3308,
-  "dolt_database": "beads_turtlebot-maze"
+  "dolt_mode": "server",
+  "dolt_server_port": 3310,
+  "dolt_database": "turtlebot_maze"
 }

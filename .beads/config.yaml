@@ -3,3 +3,7 @@
 issue-prefix: turtlebot-maze
 
 sync.branch: "beads-sync"
+
+dolt.port: 3310
+
+dolt.database: "turtlebot_maze"
