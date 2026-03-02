@@ -97,6 +97,18 @@ services:
       use_aruco:=True
       rviz_config_file:=/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz
 
+  # House world — AWS RoboMaker Small House (Jazzy-compatible)
+  # Uses the same overlay image as demo-world-enhanced; no rebuild needed.
+  # Select this world with:  docker compose up demo-world-house
+  demo-world-house:
+    extends: overlay
+    environment:
+      - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
+    command: >
+      ros2 launch tb_worlds tb_demo_world.launch.py
+      world_name:=house_world.sdf.xacro
+      map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/house_world_map.yaml
+
   # Behavior demo using Python and py_trees
   demo-behavior-py:
     extends: overlay
