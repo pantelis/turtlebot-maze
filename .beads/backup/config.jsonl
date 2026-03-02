@@ -9,3 +9,4 @@
 {"key":"compaction_enabled","value":"false"}
 {"key":"issue_prefix","value":"turtlebot-maze"}
 {"key":"schema_version","value":"6"}
+{"key":"sync.branch","value":"beads-sync"}
