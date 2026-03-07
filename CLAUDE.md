@@ -105,6 +105,22 @@ Use `--squash` (default), `--merge`, or `--rebase` depending on the change.
 
 Use `bd` (beads) for task and issue tracking. See [beads documentation](https://github.com/steveyegge/beads).
 
+### Beads Dolt Configuration
+
+This repo uses a **local** Dolt server — never a shared/global one.
+
+- **Data directory**: `.beads/dolt` (inside the repo, git-ignored)
+- **Database name**: `beads` (local to this repo's `.beads/dolt/beads`)
+- **Port**: `3320` (unique per-repo, set in `.beads/config.yaml` as `dolt.port`)
+- **Do NOT** point at the shared systemd Dolt data directory (`~/.local/share/beads/dolt/`)
+- **Do NOT** rely on the systemd `beads-dolt` service — each repo manages its own server via `bd`'s idle-monitor
+
+If `bd list` fails with "database not found", verify:
+
+1. `.beads/config.yaml` has `dolt.database: "beads"` and `dolt.port: 3320`
+2. `.beads/metadata.json` matches (`dolt_database`, `dolt_server_port`, `dolt_data_dir` pointing to local `.beads/dolt`)
+3. No other dolt process is squatting on the configured port (`ss -tlnp | grep <port>`)
+
 **Before closing any issue**, always write a summary using `bd update <id> --notes "..."` that includes:
 - What was done (key changes made, files modified)
 - Root causes found (for bugs)
