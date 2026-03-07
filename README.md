@@ -58,8 +58,11 @@ graph LR
 | `base` | `Dockerfile.gpu` → `base` | ROS 2 Jazzy + Cyclone DDS + Gazebo dependencies |
 | `overlay` | `Dockerfile.gpu` → `overlay` | Adds `tb_autonomy` + `tb_worlds` packages, Nav2, BT libs |
 | `dev` | `Dockerfile.gpu` → `dev` | Development container with source mounts + Groot2 |
-| `demo-world` | extends `overlay` | Launches Gazebo house world |
-| `demo-world-enhanced` | extends `overlay` | Enhanced world with 3m textured walls and ArUco markers |
+| `demo-world` | extends `overlay` | Original Gazebo maze world (default) |
+| `demo-world-enhanced` | extends `overlay` | Enhanced maze with 3 m textured walls and ArUco markers |
+| `demo-world-house` | extends `overlay` | AWS RoboMaker Small House — residential interior (68 models) |
+| `demo-world-bookstore` | extends `overlay` | AWS RoboMaker Bookstore — retail store interior (34 models) |
+| `demo-world-warehouse` | extends `overlay` | AWS RoboMaker Small Warehouse — industrial floor, no roof (14 models) |
 | `demo-behavior-py` | extends `overlay` | Python behavior tree demo (py_trees) |
 | `demo-behavior-cpp` | extends `overlay` | C++ behavior tree demo (BehaviorTree.CPP) |
 | `zenoh-router` | `eclipse/zenoh:latest` | Zenoh router for pub/sub discovery |
@@ -168,16 +171,25 @@ Open the project in VSCode and select **Reopen in Container** when prompted. VSC
 The simulation (Gazebo + RViz2) is **not** started automatically. Launch it in a separate terminal on the host:
 
 ```bash
-# Standard world
+# Original maze world (default)
 docker compose up demo-world
 
-# Enhanced world (3 m textured walls + ArUco markers)
+# Enhanced maze — 3 m textured walls + ArUco markers
 docker compose up demo-world-enhanced
+
+# AWS RoboMaker Small House (residential interior)
+docker compose up demo-world-house
+
+# AWS RoboMaker Bookstore (retail store)
+docker compose up demo-world-bookstore
+
+# AWS RoboMaker Small Warehouse (industrial, no roof)
+docker compose up demo-world-warehouse
 ```
 
 Because all services share `network_mode: host`, the `dev` container and the simulation container see the same ROS 2 topics. You can run `ros2 topic list`, navigate the robot, or trigger behavior trees from the VSCode terminal while Gazebo runs alongside.
 
-> **Note:** Do not run `demo-world` and `demo-world-enhanced` at the same time — both bind the same gz-sim ports.
+> **Note:** Run only **one** world service at a time — all bind the same gz-sim ports.
 
 ### Local Setup
 
@@ -266,9 +278,17 @@ The robot navigates known locations searching for the same colored blocks placed
 
 ### Starting the Simulation
 
+Pick one world and start it before launching any behavior demo:
+
 ```bash
-docker compose up demo-world
+docker compose up demo-world           # original maze (default)
+docker compose up demo-world-enhanced  # maze with textured walls + ArUco
+docker compose up demo-world-house     # residential house
+docker compose up demo-world-bookstore # bookstore
+docker compose up demo-world-warehouse # warehouse (no roof)
 ```
+
+> **Note:** Run only one world at a time — all services share the same gz-sim ports.
 
 ### HSV Mode (Default)
 
@@ -370,59 +390,116 @@ DETECTOR_TYPE=yolo TARGET_OBJECT=cup docker compose up demo-behavior-cpp
 
 ---
 
-## Enhanced Maze World
+## Simulation Environments
 
-An optional world variant with taller textured walls and ArUco markers, designed for vision-based navigation and SLAM testing. The original `demo-world` remains unchanged.
+Five Gazebo worlds are available. All use the same Docker images and the same behavior demo services — only the world service name changes.
 
-### What's Different
+> **Warning:** Run only **one** world at a time. All services use `network_mode: host` and share gz-sim ports.
 
-| Feature | `demo-world` | `demo-world-enhanced` |
-|---------|-------------|----------------------|
-| Wall height | 1 m | 3 m |
-| Wall appearance | Default gray (`Gazebo/Wood`) | PBR textures with color fallbacks (brick red, concrete gray, wood brown) |
-| ArUco markers | None | Two markers (IDs 60 and 80) spawned at runtime |
-| Map / Nav2 config | `sim_house_map.yaml` | Same — wall footprint is unchanged |
+### World Comparison
+
+| Service | Scene | Map | Models | Notes |
+|---------|-------|-----|--------|-------|
+| `demo-world` | Original TurtleBot maze | `sim_house_map.yaml` | Built-in | Default, minimal |
+| `demo-world-enhanced` | Maze + 3 m textured walls + ArUco | Same as above | ArUco + textures | Best for visual SLAM |
+| `demo-world-house` | AWS residential house | `house_world_map.yaml` | 68 residential | Furniture, appliances, portraits |
+| `demo-world-bookstore` | AWS bookstore | `bookstore_world_map.yaml` | 34 retail | Shelving, counters, products |
+| `demo-world-warehouse` | AWS warehouse (no roof) | `warehouse_world_map.yaml` | 14 industrial | Racks, pallets, open floor |
 
 ### Launch
 
 ```bash
-# Build (only needed once)
-docker compose build demo-world-enhanced
-
-# Launch the enhanced world
+docker compose up demo-world
 docker compose up demo-world-enhanced
+docker compose up demo-world-house
+docker compose up demo-world-bookstore
+docker compose up demo-world-warehouse
 ```
 
-> **Warning:** Do not run `demo-world` and `demo-world-enhanced` simultaneously. Both use `network_mode: host`, so two gz-sim instances will compete for the same ports.
+All behavior demos work with any world — just substitute the world service name:
 
-The enhanced world is fully compatible with all behavior demos — just start `demo-world-enhanced` instead of `demo-world`, then run `demo-behavior-py` or `demo-behavior-cpp` as usual.
+```bash
+# Example: run queue behavior tree in the warehouse world
+docker compose up demo-world-warehouse        # Terminal 1
+BT_TYPE=queue ENABLE_VISION=true docker compose up demo-behavior-py  # Terminal 2
+```
+
+### Enhanced Maze World
+
+An optional variant of the original maze with taller textured walls and ArUco markers, designed for visual SLAM and vision-based navigation testing.
+
+| Feature | `demo-world` | `demo-world-enhanced` |
+|---------|-------------|----------------------|
+| Wall height | 1 m | 3 m |
+| Wall appearance | Default gray | PBR textures (brick, concrete, wood) |
+| ArUco markers | None | Two markers (IDs 60 and 80) |
+| Map / Nav2 config | `sim_house_map.yaml` | Same — footprint unchanged |
+
+The 3-meter walls improve SLAM by providing:
+
+- **2D SLAM** — denser scan hits (no "over the wall" gaps)
+- **3D/Visual SLAM** — textured surfaces for feature extraction and loop closure
+- **ArUco localization** — known-pose markers as camera-based reference
+
+### AWS RoboMaker Worlds
+
+The house, bookstore, and warehouse worlds are adapted from [AWS RoboMaker](https://github.com/aws-robotics) open-source assets, ported to Gazebo Harmonic / ROS 2 Jazzy. World files and models are stored under `tb_worlds/worlds/` and `tb_worlds/models/` and are injected into the running overlay container via volume mounts — **no image rebuild required**.
+
+| World | Source | Map resolution |
+|-------|--------|----------------|
+| House | `aws-robotics/aws-robomaker-small-house-world` (Jazzy PR #47) | 5 cm/px |
+| Bookstore | `aws-robotics/aws-robomaker-bookstore-world` (Harmonic PR #21) | 5 cm/px |
+| Warehouse | `aws-robotics/aws-robomaker-small-warehouse-world` (Jazzy PR #27, no-roof variant) | 2 cm/px |
+
+#### House World
+
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![House world in Gazebo Sim](./media/world_house_gazebo.png) | ![House world Nav2 map in RViz2](./media/world_house_rviz2.png) |
+
+Residential interior with kitchen, living room, bedrooms, and garage. 68 `aws_robomaker_residential_*` models including furniture, appliances, carpets, and portraits.
+
+#### Bookstore World
+
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![Bookstore world in Gazebo Sim](./media/world_bookstore_gazebo.png) | ![Bookstore world Nav2 map in RViz2](./media/world_bookstore_rviz2.png) |
+
+Retail store interior with full-height bookshelves, display tables, a curved checkout counter, and product models. 34 `aws_robomaker_retail_*` models.
+
+#### Warehouse World
+
+| Gazebo Sim (3D view) | RViz2 (Nav2 map) |
+|---|---|
+| ![Warehouse world in Gazebo Sim](./media/world_warehouse_gazebo.png) | ![Warehouse world Nav2 map in RViz2](./media/world_warehouse_rviz2.png) |
+
+Industrial open floor with yellow steel racks, palletised boxes, clutter items, and drive lanes. No-roof variant for unobstructed TurtleBot navigation. 14 `aws_robomaker_warehouse_*` models, 2 cm/px map.
 
 ### Launch Parameters
 
-The enhanced world is controlled through launch arguments on `tb_demo_world.launch.py`:
+All worlds are launched through `tb_demo_world.launch.py`:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `world_name` | `sim_house.sdf.xacro` | World filename relative to `tb_worlds/worlds/` |
-| `use_aruco` | `False` | Spawn ArUco markers in the environment |
-
-### Why Taller Walls Help SLAM
-
-The 3-meter walls provide significantly more vertical surface for lidar and depth cameras. This improves:
-
-- **2D SLAM** — more consistent scan matching since the lidar always hits a wall (no "over the wall" gaps)
-- **3D SLAM** — depth cameras see wall surfaces at varying heights, producing denser point clouds
-- **Visual SLAM** — textured walls provide distinctive visual features for loop closure and relocalization
-- **ArUco localization** — markers at known positions enable camera-based pose estimation as a complement to lidar SLAM
+| `world_name` | `sim_house.sdf.xacro` | World filename in `tb_worlds/worlds/` |
+| `map` | (world-specific) | Full path to the Nav2 map YAML |
+| `use_aruco` | `False` | Spawn ArUco markers (enhanced maze only) |
 
 ### Files
 
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `tb_worlds/worlds/sim_house_enhanced.sdf.xacro` | Enhanced world (3m walls, PBR textures, color fallbacks) |
-| `tb_worlds/worlds/textures/` | Wall texture images (brick, concrete, wood) |
+| `tb_worlds/worlds/sim_house_enhanced.sdf.xacro` | Enhanced maze (3 m walls, textures, ArUco) |
+| `tb_worlds/worlds/house_world.sdf.xacro` | AWS residential house |
+| `tb_worlds/worlds/bookstore_world.sdf.xacro` | AWS bookstore |
+| `tb_worlds/worlds/warehouse_world.sdf.xacro` | AWS warehouse (no roof) |
+| `tb_worlds/maps/` | Nav2 occupancy grid maps (`.pgm` + `.yaml`) for all worlds |
+| `tb_worlds/models/aws_robomaker_residential_*/` | 68 residential furniture/appliance models |
+| `tb_worlds/models/aws_robomaker_retail_*/` | 34 retail store models |
+| `tb_worlds/models/aws_robomaker_warehouse_*/` | 14 warehouse rack/pallet models |
 | `tb_worlds/models/aruco_id_{60,80}/` | ArUco marker models with OBJ meshes |
-| `tb_worlds/launch/aruco_marker_spawner.launch.py` | Spawns ArUco markers with 10s delay |
+| `tb_worlds/worlds/textures/` | PBR wall textures (brick, concrete, wood) |
+| `tb_worlds/photos/` | Portrait JPEGs for residential DeskPortrait models |
 
 ---
 
