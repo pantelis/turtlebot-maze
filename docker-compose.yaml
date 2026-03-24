@@ -105,7 +105,11 @@ services:
     environment:
       - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
     volumes:
-      # Inject new world files without rebuilding the overlay image.
+      # D435i camera config (bridge + URDF + rviz) — same as demo-world-enhanced
+      - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
+      - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
+      - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
+      # House world files
       - ./tb_worlds/worlds/house_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/house_world.sdf.xacro:ro
       - ./tb_worlds/maps/house_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/house_world_map.pgm:ro
       - ./tb_worlds/maps/house_world_map.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/house_world_map.yaml:ro
