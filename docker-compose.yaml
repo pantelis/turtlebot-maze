@@ -272,6 +272,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - PYTHONUNBUFFERED=1
     deploy:
       resources:
         reservations:
@@ -282,7 +283,57 @@ services:
     volumes:
       - ./detector:/app
     working_dir: /app
-    command: python object_detector.py --confidence 0.5 --model yolov8n.pt --image-key camera/color/image_raw --connect tcp/localhost:7447
+    command: python object_detector.py --confidence 0.3 --model yolov8n.pt --image-key camera/color/image_raw --connect tcp/localhost:7447
+
+  # Zenoh → pgvector ingest worker (writes CLIP embeddings to PostgreSQL)
+  embedding-ingest:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./detector:/app
+    working_dir: /app
+    command: >
+      python embedding_ingest.py
+      --connect tcp/localhost:7447
+      --key tb/detections
+      --pg-host localhost
+      --pg-port 5436
+      --pg-db vectordb
+    depends_on:
+      - vector
+      - zenoh-router
+
+  # Semantic graph builder (writes property graph to Apache AGE)
+  graph-builder:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.torch.gpu
+    network_mode: host
+    ipc: host
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./detector:/app
+    working_dir: /app
+    command: >
+      python graph_builder.py
+      --connect tcp/localhost:7447
+      --key tb/detections
+      --age-host localhost
+      --age-port 5435
+      --age-db graphdb
+      --epsilon 1.5
+      --min-samples 3
+      --spatial-threshold 3.0
+      --similarity-threshold 0.7
+    depends_on:
+      - age
+      - zenoh-router
 
   # stella_vslam Visual SLAM (standalone, Zenoh transport)
   demo-slam:
@@ -304,3 +355,45 @@ services:
       --config /slam/config/turtlebot_realsense.yaml
       --vocab /slam/vocab/orb_vocab.fbow
       --connect tcp/localhost:7447
+
+  # --- Graph DB (Apache AGE) ---
+  age:
+    build:
+      context: .
+      dockerfile: docker/age.Dockerfile
+    image: turtlebot_behavior:age
+    container_name: age-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: graphdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - age_data:/var/lib/postgresql/data
+      - ./age-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+  # --- Vector DB (pgvector) ---
+  vector:
+    image: ankane/pgvector:latest
+    container_name: pgvector-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vectordb
+    ports:
+      - "5436:5432"
+    volumes:
+      - vector_data:/var/lib/postgresql/data
+      - ./vector-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  age_data:
+  vector_data:
