@@ -232,6 +232,8 @@ def main():
     latest_pose = None  # (x, y, yaw)
     last_keyframe_pose = None  # (x, y, yaw)
     keyframe_id = 0
+    odom_fallback_warned = False
+    startup_time = time.time()
 
     print(
         f"Keyframe gating: dist={keyframe_dist_thresh}m, "
@@ -259,8 +261,15 @@ def main():
         latest_pose = (p.x, p.y, yaw)
 
     def is_keyframe() -> bool:
-        nonlocal last_keyframe_pose, keyframe_id
+        nonlocal last_keyframe_pose, keyframe_id, odom_fallback_warned
         if latest_pose is None:
+            # Fallback: if no odom after 10s, process every frame at max-fps
+            if time.time() - startup_time > 10.0:
+                if not odom_fallback_warned:
+                    print("WARNING: No odom received, falling back to time-based keyframes")
+                    odom_fallback_warned = True
+                keyframe_id += 1
+                return True
             return False
         if last_keyframe_pose is None:
             last_keyframe_pose = latest_pose

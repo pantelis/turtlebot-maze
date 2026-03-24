@@ -785,16 +785,24 @@ sequenceDiagram
 |---|---|---|---|
 | `camera/color/image_raw` | ROS → Detector/SLAM | CDR (`sensor_msgs/Image`) | D435i colour frames (auto-bridged) |
 | `camera/depth/image_rect_raw` | ROS → SLAM | CDR (`sensor_msgs/Image`) | D435i depth frames (RGBD mode) |
-| `tb/detections` | Detector → ROS | JSON array | Detection results |
+| `tb/detections` | Detector → ROS | JSON array | Detection results with CLIP embeddings (when `--enable-embeddings` is active) |
 
 ### Detection JSON Format
 
 ```json
 [
-  {"class": "cup", "confidence": 0.87, "bbox": [120, 80, 250, 310]},
-  {"class": "bottle", "confidence": 0.72, "bbox": [300, 100, 380, 350]}
+  {
+    "class": "cup",
+    "confidence": 0.87,
+    "bbox": [120, 80, 250, 310],
+    "embedding": "<base64-encoded 512 × float32>",
+    "embedding_dim": 512,
+    "embedding_model": "ViT-B-32/laion2b_s34b_b79k"
+  }
 ]
 ```
+
+The `embedding`, `embedding_dim`, and `embedding_model` fields are present when `--enable-embeddings` is active (default). Each embedding is an L2-normalized 512-dim CLIP vector (open\_clip ViT-B/32) of the detection crop, serialized as base64 little-endian float32.
 
 ### Detector CLI Options
 
@@ -804,7 +812,10 @@ python object_detector.py \
   --confidence 0.5 \
   --max-fps 10 \
   --image-key "camera/color/image_raw" \
-  --detection-key "tb/detections"
+  --detection-key "tb/detections" \
+  --enable-embeddings \
+  --clip-model "ViT-B-32" \
+  --clip-pretrained "laion2b_s34b_b79k"
 ```
 
 ---
