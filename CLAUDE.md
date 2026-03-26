@@ -129,6 +129,34 @@ If `bd list` fails with "database not found", verify:
 
 This makes closed issues a searchable knowledge base for future debugging sessions.
 
+## Robot Commands via ros-mcp-server
+
+Always use the ros-mcp-server MCP tools (`publish_for_durations`, `publish_once`, etc.) to command the robot — not `docker exec` with `ros2 topic pub`.
+
+Rosbridge has a DDS publisher discovery delay (~5 seconds). When publishing to `/cmd_vel`, prepend 5 warmup messages (1 second each, zero velocity) before the actual motion commands. Without this, `ros_gz_bridge` won't discover the publisher in time and the commands are lost.
+
+```
+# Example: rotate the robot
+publish_for_durations(
+  topic="/cmd_vel",
+  msg_type="geometry_msgs/msg/TwistStamped",
+  messages=[
+    # 5× warmup (zero velocity, gives DDS time to discover publisher)
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+    # Actual motion
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0.5}}},
+    ...
+    # Stop
+    {"header": {"frame_id": "base_link"}, "twist": {"angular": {"z": 0}}},
+  ],
+  durations=[1, 1, 1, 1, 1, 1, ..., 0.5]
+)
+```
+
 ## Key Configuration
 
 - ROS distro: `jazzy` (set in `.env`)

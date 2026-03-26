@@ -17,8 +17,12 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # System packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
   apt-get -y install --no-install-recommends \
-  curl git ffmpeg libgl1 libglib2.0-0 make bash-completion \
+  curl git ffmpeg libgl1 libglib2.0-0 make bash-completion build-essential \
   && rm -rf /var/lib/apt/lists/*
+
+# Rust toolchain (needed to build eclipse-zenoh from source)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # uv package manager (eng-ai-agents pattern)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -33,6 +37,9 @@ RUN pip install -r /tmp/requirements.txt
 
 # Download YOLOv8 nano weights at build time (avoids runtime download)
 RUN python -c "from ultralytics import YOLO; YOLO('yolov8n.pt')"
+
+# Download CLIP ViT-B/32 weights at build time (avoids runtime download)
+RUN python -c "import open_clip; open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')"
 
 USER $USERNAME
 RUN git config --global commit.gpgsign false
