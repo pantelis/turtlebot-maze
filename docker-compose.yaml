@@ -119,6 +119,7 @@ services:
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=house_world.sdf.xacro
       map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/house_world_map.yaml
+      rviz_config_file:=/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz
 
   # Bookstore world — AWS RoboMaker Bookstore (Gazebo Harmonic-compatible)
   # Uses the same overlay image as all other worlds; no rebuild needed.
@@ -128,6 +129,10 @@ services:
     environment:
       - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
     volumes:
+      # D435i camera config (bridge + URDF + rviz) — same as demo-world-enhanced / demo-world-house
+      - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
+      - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
+      - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
       # Inject new world files without rebuilding the overlay image.
       - ./tb_worlds/worlds/bookstore_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/bookstore_world.sdf.xacro:ro
       - ./tb_worlds/maps/bookstore_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/bookstore_world_map.pgm:ro
@@ -137,6 +142,7 @@ services:
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=bookstore_world.sdf.xacro
       map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/bookstore_world_map.yaml
+      rviz_config_file:=/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz
 
   # Warehouse world — AWS RoboMaker Small Warehouse, no-roof variant (Jazzy-compatible)
   # Uses the same overlay image as all other worlds; no rebuild needed.
@@ -146,6 +152,10 @@ services:
     environment:
       - GZ_SIM_RESOURCE_PATH=/overlay_ws/install/tb_worlds/share/tb_worlds/worlds:/overlay_ws/install/tb_worlds/share/tb_worlds/models
     volumes:
+      # D435i camera config (bridge + URDF + rviz) — same as demo-world-enhanced / demo-world-house
+      - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
+      - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
+      - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
       # Inject new world files without rebuilding the overlay image.
       - ./tb_worlds/worlds/warehouse_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/warehouse_world.sdf.xacro:ro
       - ./tb_worlds/maps/warehouse_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/warehouse_world_map.pgm:ro
@@ -155,6 +165,7 @@ services:
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=warehouse_world.sdf.xacro
       map:=/overlay_ws/install/tb_worlds/share/tb_worlds/maps/warehouse_world_map.yaml
+      rviz_config_file:=/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz
 
   # Behavior demo using Python and py_trees
   demo-behavior-py:

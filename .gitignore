@@ -17,3 +17,6 @@ detector/*.pt
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Beads archive (migrated to Jira 2026-04-13)
+.beads-archive.zip
