@@ -45,6 +45,14 @@
           },
         },
 
+        /// Robot odometry for keyframe gating in the detector.
+        odom: {
+          key_expr: "odom",
+          volume: {
+            id: "memory",
+          },
+        },
+
         /// SLAM pose estimates published by slam_bridge.py (tb/slam/pose).
         /// Each sample is a JSON object containing a 4x4 pose matrix.
         slam_pose: {
