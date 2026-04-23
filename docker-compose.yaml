@@ -371,6 +371,94 @@ services:
       --vocab /slam/vocab/orb_vocab.fbow
       --connect tcp/localhost:7447
 
+  # stella_vslam Visual SLAM — Intel Arc GPU variant (native Linux).
+  # Exposes the iGPU/dGPU render node (/dev/dri) so OpenCV's OpenCL (T-API)
+  # backend and VA-API video decode can offload to the Arc GPU. stella_vslam's
+  # ORB/g2o pipeline remains CPU-heavy, but image pre-processing (resize,
+  # color-convert, undistort) will run on the GPU when intel-opencl-icd and
+  # intel-level-zero-gpu are present in the base image.
+  #
+  # Host prereqs (Ubuntu 24.04):
+  #   sudo apt install intel-opencl-icd intel-level-zero-gpu clinfo vainfo
+  #   sudo usermod -aG render,video $USER   # log out/in after
+  #
+  # For Windows + WSL2 use demo-slam-intel-wsl instead — WSL2 virtualises the
+  # GPU as /dev/dxg, not /dev/dri, and VA-API is not wired through yet.
+  #
+  # Select with:  docker compose up demo-slam-intel
+  demo-slam-intel:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.slam
+    network_mode: host
+    ipc: host
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    environment:
+      - DISPLAY
+      - PYTHONUNBUFFERED=1
+      - ZENOH_ROUTER=tcp/localhost:7447
+      # Intel compute runtime / Level Zero
+      - ZE_ENABLE_SYSMAN=1
+      - NEOReadDebugKeys=1
+      # VA-API driver selector for Arc (iHD = modern Intel media driver)
+      - LIBVA_DRIVER_NAME=iHD
+      # Ensure OpenCV picks the Intel OpenCL platform when multiple are present
+      - "OPENCV_OPENCL_DEVICE=Intel:GPU:"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command: >
+      --mode rgbd
+      --image-key camera/color/image_raw
+      --depth-key camera/depth/image_rect_raw
+      --config /slam/config/turtlebot_realsense.yaml
+      --vocab /slam/vocab/orb_vocab.fbow
+      --connect tcp/localhost:7447
+
+  # stella_vslam Visual SLAM — Intel Arc GPU variant (Windows + WSL2).
+  # WSL2 does not expose /dev/dri; the host GPU is virtualised as /dev/dxg and
+  # Windows-side drivers are mounted at /usr/lib/wsl. Mesa's D3D12 gallium
+  # driver then talks to the Arc GPU via dxgkrnl. VA-API is not yet wired
+  # through WSL2's GPU virtualisation, so media decode stays on CPU.
+  #
+  # Host prereqs (inside WSL2 distro):
+  #   sudo apt install intel-opencl-icd intel-level-zero-gpu mesa-utils
+  #   (no render/video group plumbing needed — /dev/dxg is world-accessible)
+  #
+  # Select with:  docker compose up demo-slam-intel-wsl
+  demo-slam-intel-wsl:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.slam
+    network_mode: host
+    ipc: host
+    devices:
+      - /dev/dxg:/dev/dxg
+    environment:
+      - DISPLAY
+      - PYTHONUNBUFFERED=1
+      - ZENOH_ROUTER=tcp/localhost:7447
+      # Prepend WSL driver libs; keep stella_vslam's /usr/local/lib paths.
+      - LD_LIBRARY_PATH=/usr/lib/wsl/lib:/usr/local/lib:/usr/local/lib/fbow
+      - MESA_D3D12_DEFAULT_ADAPTER_NAME=Intel
+      - GALLIUM_DRIVER=d3d12
+      - LIBGL_ALWAYS_SOFTWARE=0
+      - ZE_ENABLE_SYSMAN=1
+      - "OPENCV_OPENCL_DEVICE=Intel:GPU:"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /usr/lib/wsl:/usr/lib/wsl:ro
+    command: >
+      --mode rgbd
+      --image-key camera/color/image_raw
+      --depth-key camera/depth/image_rect_raw
+      --config /slam/config/turtlebot_realsense.yaml
+      --vocab /slam/vocab/orb_vocab.fbow
+      --connect tcp/localhost:7447
+
   # --- Graph DB (Apache AGE) ---
   age:
     build:
