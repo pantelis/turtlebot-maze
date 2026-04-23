@@ -376,11 +376,14 @@ services:
   # backend and VA-API video decode can offload to the Arc GPU. stella_vslam's
   # ORB/g2o pipeline remains CPU-heavy, but image pre-processing (resize,
   # color-convert, undistort) will run on the GPU when intel-opencl-icd and
-  # intel-level-zero-gpu are present in the base image.
+  # libze-intel-gpu1 are present in the base image.
   #
   # Host prereqs (Ubuntu 24.04):
-  #   sudo apt install intel-opencl-icd intel-level-zero-gpu clinfo vainfo
+  #   sudo apt install intel-opencl-icd libze1 libze-intel-gpu1 clinfo vainfo
   #   sudo usermod -aG render,video $USER   # log out/in after
+  # Note: on Noble the Level Zero runtime moved from intel-level-zero-gpu to
+  # libze-intel-gpu1 (backend) + libze1 (loader). Older guides still reference
+  # the old name, which no longer exists in the Ubuntu archive.
   #
   # For Windows + WSL2 use demo-slam-intel-wsl instead — WSL2 virtualises the
   # GPU as /dev/dxg, not /dev/dri, and VA-API is not wired through yet.
@@ -425,8 +428,10 @@ services:
   # through WSL2's GPU virtualisation, so media decode stays on CPU.
   #
   # Host prereqs (inside WSL2 distro):
-  #   sudo apt install intel-opencl-icd intel-level-zero-gpu mesa-utils
+  #   sudo apt install intel-opencl-icd libze1 libze-intel-gpu1 mesa-utils
   #   (no render/video group plumbing needed — /dev/dxg is world-accessible)
+  # Note: on Noble the Level Zero runtime is libze-intel-gpu1 + libze1; the
+  # older intel-level-zero-gpu package no longer exists in the archive.
   #
   # Select with:  docker compose up demo-slam-intel-wsl
   demo-slam-intel-wsl:
