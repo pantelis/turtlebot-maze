@@ -437,7 +437,10 @@
         <sensor name="camera_realsense_d435i_imu" type="imu">
           <always_on>true</always_on>
           <update_rate>200</update_rate>
-          <pose>0.064 -0.047 0.107 0 0 0</pose>
+          <!-- Optical axes (z forward, x right, y down), as the real driver reports
+               camera_imu_optical_frame. tb_world.launch.py publishes the matching
+               static TF from camera_link. -->
+          <pose>0.064 -0.047 0.107 -1.5707963 0 -1.5707963</pose>
           <topic>camera/realsense_d435i/imu</topic>
           <gz_frame_id>camera_imu_optical_frame</gz_frame_id>
           <imu>
