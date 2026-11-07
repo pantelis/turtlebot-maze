@@ -91,6 +91,8 @@ services:
       - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
       - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
       - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
+      # Launch fix: gz sim must wait for the world xacro to finish writing.
+      - ./tb_worlds/launch/tb_world.launch.py:/overlay_ws/src/tb_worlds/launch/tb_world.launch.py:ro
     command: >
       ros2 launch tb_worlds tb_demo_world.launch.py
       world_name:=sim_house_enhanced.sdf.xacro
@@ -109,6 +111,8 @@ services:
       - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
       - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
       - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
+      # Launch fix: gz sim must wait for the world xacro to finish writing.
+      - ./tb_worlds/launch/tb_world.launch.py:/overlay_ws/src/tb_worlds/launch/tb_world.launch.py:ro
       # House world files
       - ./tb_worlds/worlds/house_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/house_world.sdf.xacro:ro
       - ./tb_worlds/maps/house_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/house_world_map.pgm:ro
@@ -133,6 +137,8 @@ services:
       - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
       - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
       - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
+      # Launch fix: gz sim must wait for the world xacro to finish writing.
+      - ./tb_worlds/launch/tb_world.launch.py:/overlay_ws/src/tb_worlds/launch/tb_world.launch.py:ro
       # Inject new world files without rebuilding the overlay image.
       - ./tb_worlds/worlds/bookstore_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/bookstore_world.sdf.xacro:ro
       - ./tb_worlds/maps/bookstore_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/bookstore_world_map.pgm:ro
@@ -156,6 +162,8 @@ services:
       - ./tb_worlds/configs/turtlebot3_bridge.yaml:/overlay_ws/install/tb_worlds/share/tb_worlds/configs/turtlebot3_bridge.yaml:ro
       - ./tb_worlds/urdf/gz_waffle.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/urdf/gz_waffle.sdf.xacro:ro
       - ./tb_worlds/rviz/nav2_turtlebot_view.rviz:/overlay_ws/install/tb_worlds/share/tb_worlds/rviz/nav2_turtlebot_view.rviz:ro
+      # Launch fix: gz sim must wait for the world xacro to finish writing.
+      - ./tb_worlds/launch/tb_world.launch.py:/overlay_ws/src/tb_worlds/launch/tb_world.launch.py:ro
       # Inject new world files without rebuilding the overlay image.
       - ./tb_worlds/worlds/warehouse_world.sdf.xacro:/overlay_ws/install/tb_worlds/share/tb_worlds/worlds/warehouse_world.sdf.xacro:ro
       - ./tb_worlds/maps/warehouse_world_map.pgm:/overlay_ws/install/tb_worlds/share/tb_worlds/maps/warehouse_world_map.pgm:ro

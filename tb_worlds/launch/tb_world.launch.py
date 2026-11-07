@@ -18,7 +18,7 @@ from launch.actions import (
     OpaqueFunction,
     RegisterEventHandler,
 )
-from launch.event_handlers import OnShutdown
+from launch.event_handlers import OnProcessExit, OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
@@ -145,6 +145,17 @@ def generate_launch_description():
         output="screen",
     )
 
+    # Gazebo reads the world file that xacro writes, so it must not start until
+    # xacro has finished. Launching both at once is a race: on the larger worlds
+    # xacro is still writing when Gazebo opens the path, and gz sim exits with
+    # "Unable to find or download file".
+    gazebo_after_world_sdf = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=world_sdf_xacro,
+            on_exit=[gazebo],
+        )
+    )
+
     remove_temp_sdf_file = RegisterEventHandler(
         event_handler=OnShutdown(
             on_shutdown=[OpaqueFunction(function=lambda _: os.remove(world_sdf))]
@@ -182,7 +193,7 @@ def generate_launch_description():
             world_sdf_xacro,
             remove_temp_sdf_file,
             gz_tb_spawner,
-            gazebo,
+            gazebo_after_world_sdf,
             robot_state_publisher_cmd,
         ]
     )
