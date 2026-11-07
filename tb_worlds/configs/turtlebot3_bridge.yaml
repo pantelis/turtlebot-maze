@@ -70,6 +70,13 @@
   gz_type_name: "gz.msgs.PointCloudPacked"
   direction: GZ_TO_ROS
 
+# D435i IMU. ROS topic matches realsense2_camera with unite_imu_method set.
+- ros_topic_name: "/camera/imu"
+  gz_topic_name: "/camera/realsense_d435i/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
 # Legacy alias: vision behaviors (vision_behaviors.cpp, vision.py) subscribe to
 # /camera/image_raw.  This bridge entry means no code changes are needed in
 # tb_autonomy for the D435i swap — same alias pattern works in simulation and

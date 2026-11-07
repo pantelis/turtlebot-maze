@@ -125,6 +125,23 @@ def generate_launch_description():
         remappings=remappings,
     )
 
+    # The D435i IMU reports in camera_imu_optical_frame (see gz_waffle.sdf.xacro).
+    # Gazebo does not publish TF for a sensor frame, so publish it here with the
+    # sensor's pose on camera_link.
+    camera_imu_tf_cmd = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="camera_imu_static_tf",
+        namespace=namespace,
+        arguments=[
+            "--x", "0.064", "--y", "-0.047", "--z", "0.107",
+            "--roll", "-1.5707963", "--pitch", "0", "--yaw", "-1.5707963",
+            "--frame-id", "camera_link", "--child-frame-id", "camera_imu_optical_frame",
+        ],
+        parameters=[{"use_sim_time": use_sim_time}],
+        remappings=remappings,
+    )
+
     # The SDF file for the world is a xacro file because we wanted to
     # conditionally load the SceneBroadcaster plugin based on whether we're
     # running in headless mode. But currently, the Gazebo command line doesn't
@@ -184,5 +201,6 @@ def generate_launch_description():
             gz_tb_spawner,
             gazebo,
             robot_state_publisher_cmd,
+            camera_imu_tf_cmd,
         ]
     )

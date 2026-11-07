@@ -419,6 +419,97 @@
           </camera>
           <topic>camera/realsense_d435i</topic>
         </sensor>
+
+        <!-- Simulated D435i IMU (Bosch BMI055), fixed to the camera so the
+             camera-to-IMU transform is known, as on the real camera.
+             Rate: the real D435i streams gyro at 200 Hz and accel at 63 Hz
+             (librealsense src/ds/d400/d400-factory.cpp defaults). A Gazebo
+             imu sensor has one rate, so both run at 200 Hz here.
+             White noise: BMI055 datasheet noise densities, gyro 0.014 deg/s/sqrt(Hz)
+             and accel 150 ug/sqrt(Hz), as quoted from the datasheet in
+             Monado imu_preintegration.hpp and the lunarlab-gatech kalibr notes
+             (the Bosch PDF URL returned 404). Per-sample stddev = density * sqrt(200 Hz):
+             gyro 3.5e-3 rad/s, accel 2.1e-2 m/s^2.
+             Bias: chosen for teaching, not taken from the datasheet. Each run draws a
+             constant bias (stddev 5e-3 rad/s gyro, 5e-2 m/s^2 accel) plus a slow
+             random walk (dynamic_bias_*), so IMU-only dead reckoning drifts visibly
+             within tens of seconds. The tb3_imu above stays bias-free. -->
+        <sensor name="camera_realsense_d435i_imu" type="imu">
+          <always_on>true</always_on>
+          <update_rate>200</update_rate>
+          <!-- Optical axes (z forward, x right, y down), as the real driver reports
+               camera_imu_optical_frame. tb_world.launch.py publishes the matching
+               static TF from camera_link. -->
+          <pose>0.064 -0.047 0.107 -1.5707963 0 -1.5707963</pose>
+          <topic>camera/realsense_d435i/imu</topic>
+          <gz_frame_id>camera_imu_optical_frame</gz_frame_id>
+          <imu>
+            <angular_velocity>
+              <x>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>3.5e-3</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-3</bias_stddev>
+                  <dynamic_bias_stddev>2e-4</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                </noise>
+              </x>
+              <y>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>3.5e-3</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-3</bias_stddev>
+                  <dynamic_bias_stddev>2e-4</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                </noise>
+              </y>
+              <z>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>3.5e-3</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-3</bias_stddev>
+                  <dynamic_bias_stddev>2e-4</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                </noise>
+              </z>
+            </angular_velocity>
+            <linear_acceleration>
+              <x>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2.1e-2</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-2</bias_stddev>
+                  <dynamic_bias_stddev>2e-3</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>300.0</dynamic_bias_correlation_time>
+                </noise>
+              </x>
+              <y>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2.1e-2</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-2</bias_stddev>
+                  <dynamic_bias_stddev>2e-3</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>300.0</dynamic_bias_correlation_time>
+                </noise>
+              </y>
+              <z>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2.1e-2</stddev>
+                  <bias_mean>0.0</bias_mean>
+                  <bias_stddev>5e-2</bias_stddev>
+                  <dynamic_bias_stddev>2e-3</dynamic_bias_stddev>
+                  <dynamic_bias_correlation_time>300.0</dynamic_bias_correlation_time>
+                </noise>
+              </z>
+            </linear_acceleration>
+          </imu>
+        </sensor>
       </link>
 
       <joint name="base_joint" type="fixed">
